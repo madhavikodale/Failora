@@ -37,6 +37,43 @@ npm run test
 npm run typecheck
 ```
 
+## API Server
+
+```bash
+# Start the API server (port 4200)
+npm run start --workspace=packages/api
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+| POST | `/targets` | Create a test target |
+| GET | `/targets` | List all targets |
+| GET | `/targets/:id` | Get target by ID |
+| DELETE | `/targets/:id` | Delete target |
+| POST | `/runs` | Execute a scenario (async, returns 202) |
+| GET | `/runs` | List runs (filter: `?target_id=`) |
+| GET | `/runs/:id` | Get run result |
+
+### Example
+
+```bash
+# Create target
+curl -X POST http://127.0.0.1:4200/targets \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-api","url":"http://127.0.0.1:4100/respond"}'
+
+# Run timeout scenario
+curl -X POST http://127.0.0.1:4200/runs \
+  -H "Content-Type: application/json" \
+  -d '{"target_id":"<TARGET_ID>","mode":"timeout","timeout_ms":1000,"max_retries":2}'
+
+# Get result
+curl http://127.0.0.1:4200/runs/<RUN_ID>
+```
+
 ## Mock AI Service
 
 A controlled localhost-only mock service for safe failure injection:
@@ -61,6 +98,7 @@ Endpoints:
 ```
 packages/
   core/       # Failure-testing engine (scenarios, runner, evaluator)
+  api/        # REST API (Fastify + SQLite)
   mock-ai/    # Localhost mock AI service for controlled testing
 ```
 
