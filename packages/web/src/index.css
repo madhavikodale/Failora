@@ -1,0 +1,8 @@
+/* ── Failora Design System Entry ──────────────────────────────────── */
+
+@import './styles/design-system.css';
+@import './styles/auth.css';
+@import './styles/landing.css';
+@import './styles/dashboard.css';
+@import './styles/results.css';
+@import './styles/console.css';

@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Failora — Find the Failure. Prove the Recovery.</title>
+  <meta name="description" content="Failora detects reliability gaps, investigates failures, and verifies recovery with evidence." />
+  <meta property="og:title" content="Failora — Find the Failure. Prove the Recovery." />
+  <meta property="og:description" content="Detect reliability gaps, investigate failures, and verify recovery with evidence." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="theme-color" content="#060a12" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060a12'/%3E%3Cpath d='M7 10l6 6-6 6' stroke='%234ade80' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16 22h9' stroke='%2322d3ee' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060a12;
+      --panel: #0a1120;
+      --panel-2: #0e182b;
+      --input-bg: #050913;
+      --line: #1a2740;
+      --line-2: #26385a;
+      --text: #d7e3f4;
+      --muted: #8fa1bf;
+      --dim: #5b6f90;
+      --cyan: #22d3ee;
+      --green: #4ade80;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --violet: #a78bfa;
+      --orange: #fb923c;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    [data-theme="light"] {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --panel-2: #eef2f8;
+      --input-bg: #f7f9fc;
+      --line: #d7dfeb;
+      --line-2: #b7c3d6;
+      --text: #0e1a2e;
+      --muted: #3f4f68;
+      --dim: #5d6d86;
+      --cyan: #0e7490;
+      --green: #15803d;
+      --amber: #a16207;
+      --red: #b91c1c;
+      --blue: #1d4ed8;
+      --violet: #6d28d9;
+      --orange: #c2410c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+    body { font-family: var(--mono); background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; overflow-x: hidden; -webkit-font-smoothing: antialiased; transition: background 0.3s, color 0.3s; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; background: none; border: 0; text-align: left; }
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+    ::selection { background: rgba(34,211,238,0.25); }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+    section { padding: 90px 0 40px; position: relative; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .skip { position: fixed; top: 8px; left: 8px; z-index: 300; background: var(--cyan); color: #04111f; padding: 8px 14px; border-radius: 6px; font-weight: 700; transform: translateY(-200%); }
+    .skip:focus { transform: none; }
+
+    /* ---------- Background ---------- */
+    .bg-scan { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px); }
+    .bg-glow { position: fixed; inset: -10%; z-index: -3; pointer-events: none; background: radial-gradient(800px 500px at 15% 0%, rgba(34,211,238,0.07), transparent 60%), radial-gradient(700px 500px at 90% 30%, rgba(96,165,250,0.06), transparent 60%); }
+    [data-theme="light"] .bg-scan { display: none; }
+
+    /* ---------- Terminal window ---------- */
+    .term { position: relative; border: 1px solid var(--line-2); border-radius: 12px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); box-shadow: 0 30px 80px rgba(0,0,0,0.35); overflow: hidden; }
+    .term-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--panel-2); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+    .term-bar .d { width: 11px; height: 11px; border-radius: 50%; background: #2a3a58; }
+    .term-bar .d:nth-child(1) { background: #f87171aa; } .term-bar .d:nth-child(2) { background: #fbbf24aa; } .term-bar .d:nth-child(3) { background: #4ade80aa; }
+    .term-bar .title { margin-left: 8px; flex: 1; text-align: center; color: var(--muted); }
+    .term-bar .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--amber); }
+    .term-body { padding: 22px 24px; font-size: 14px; }
+    .l { display: block; white-space: pre-wrap; word-break: break-word; opacity: 0; transform: translateY(4px); transition: opacity 0.25s ease, transform 0.25s ease; }
+    .l.shown { opacity: 1; transform: none; }
+    .p { color: var(--cyan); } .ok { color: var(--green); } .warn { color: var(--amber); } .bad { color: var(--red); }
+    .info { color: var(--blue); } .k { color: var(--violet); } .m { color: var(--muted); } .d { color: var(--dim); }
+    .caret::after { content: "\2588"; margin-left: 4px; color: var(--cyan); animation: blink 1.05s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Copy button */
+    .copy { position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--muted); background: var(--panel); transition: color 0.2s, border-color 0.2s; z-index: 2; }
+    .copy:hover { color: var(--cyan); border-color: var(--cyan); }
+    .copy[data-state="done"] { color: var(--green); border-color: var(--green); }
+    .has-copy { position: relative; }
+
+    /* ---------- Nav ---------- */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; border-bottom: 1px solid transparent; transition: background 0.3s, border-color 0.3s; }
+    .nav.scrolled { background: color-mix(in srgb, var(--bg) 88%, transparent); border-bottom-color: var(--line); backdrop-filter: blur(10px); }
+    .nav-in { display: flex; align-items: center; justify-content: space-between; height: 58px; gap: 16px; }
+    .brand { font-weight: 800; color: var(--text); font-size: 15px; white-space: nowrap; }
+    .brand .pr { color: var(--green); }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a { padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 13px; }
+    .nav-links a::before { content: "./"; color: var(--dim); }
+    .nav-links a:hover, .nav-links a.active { color: var(--cyan); background: rgba(34,211,238,0.08); }
+    .nav-right { display: flex; gap: 8px; align-items: center; }
+    .nav-right .sign { color: var(--muted); font-size: 13px; padding: 6px 10px; }
+    .nav-right .sign:hover { color: var(--text); }
+    .icon-btn { border: 1px solid var(--line-2); padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--panel); transition: color 0.2s, border-color 0.2s; }
+    .icon-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--cyan); background: var(--cyan); color: #04111f; font-weight: 700; font-size: 13px; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; }
+    .btn:hover { box-shadow: 0 0 0 4px rgba(34,211,238,0.15), 0 10px 30px rgba(34,211,238,0.2); transform: translateY(-1px); }
+    .btn.ghost { background: transparent; color: var(--cyan); }
+    .btn.ghost:hover { background: rgba(34,211,238,0.08); }
+    .menu-btn { display: none; }
+    .mobile { display: none; position: fixed; top: 58px; left: 0; right: 0; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 22px; z-index: 99; }
+    .mobile.open { display: grid; gap: 6px; }
+    .mobile a { color: var(--muted); padding: 8px 0; border-bottom: 1px dashed var(--line); }
+
+    /* ---------- Command palette ---------- */
+    .pal-back { position: fixed; inset: 0; z-index: 200; background: rgba(2,4,10,0.6); display: flex; align-items: flex-start; justify-content: center; padding: 14vh 16px 16px; backdrop-filter: blur(4px); }
+    .pal-back[hidden] { display: none; }
+    .pal { width: min(560px, 100%); border: 1px solid var(--line-2); border-radius: 12px; background: var(--panel); box-shadow: 0 30px 80px rgba(0,0,0,0.5); overflow: hidden; }
+    .pal input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; color: var(--text); font-size: 15px; outline: 0; }
+    .pal input::placeholder { color: var(--dim); opacity: 1; }
+    .pal ul { list-style: none; max-height: 340px; overflow: auto; padding: 6px; }
+    .pal li button { width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--muted); font-size: 14px; }
+    .pal li button span:last-child { color: var(--dim); font-size: 12px; }
+    .pal li button[aria-selected="true"] { background: rgba(34,211,238,0.1); color: var(--text); }
+    .pal .hint { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); display: flex; gap: 14px; flex-wrap: wrap; }
+    kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--muted); }
+
+    /* ---------- Hero ---------- */
+    .hero { padding-top: 130px; min-height: 100vh; }
+    .hero-title { font-size: clamp(2rem, 5.6vw, 4.1rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; margin-top: 26px; }
+    .hero-title .g { color: var(--green); }
+    .hero-title .c { color: var(--cyan); }
+    .hero-sub { margin-top: 16px; color: var(--muted); font-size: 16px; max-width: 680px; }
+    .cmd-form { margin-top: 30px; display: grid; gap: 12px; }
+    .cmd { display: flex; align-items: center; flex-wrap: wrap; border: 1px solid var(--line-2); border-radius: 10px; background: var(--input-bg); padding: 6px 6px 6px 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .cmd:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.14); }
+    .cmd.invalid { border-color: var(--red); }
+    .cmd .pr { color: var(--green); white-space: nowrap; }
+    .cmd .bin { color: var(--cyan); white-space: nowrap; margin: 0 10px 0 6px; }
+    .cmd input { flex: 1; min-width: 180px; background: transparent; border: 0; outline: 0; padding: 10px 6px; color: var(--text); font-size: 15px; }
+    .cmd input::placeholder { color: var(--dim); opacity: 1; }
+    .cmd .btn { margin-left: 8px; }
+    .form-err { min-height: 1.4em; color: var(--red); font-size: 13px; }
+    .form-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+    .link-btn { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+    .hero-foot { margin-top: 36px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+    .hero-foot span::before { content: "[ "; } .hero-foot span::after { content: " ]"; }
+    .scan-out { margin-top: 18px; display: none; }
+    .scan-out.show { display: block; }
+    .sim-note { color: var(--amber); font-size: 12.5px; margin-bottom: 10px; }
+    .nojs { margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+    /* ---------- Headings ---------- */
+    .cmd-title { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+    .cmd-title .pr { color: var(--green); }
+    .cmd-title .arg { color: var(--cyan); }
+    .h-big { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; margin-bottom: 18px; }
+    .lead { color: var(--muted); margin-bottom: 24px; max-width: 720px; }
+    .sub-h { font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin: 26px 0 10px; font-weight: 700; }
+
+    /* ---------- Dashboard ---------- */
+    .dash-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .dash-cell { grid-column: span 3; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; background: color-mix(in srgb, var(--text) 2%, transparent); }
+    .dash-cell .lab { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .dash-cell .val { font-size: 26px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .dash-cell .val small { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .dash-cell .sub { font-size: 12px; color: var(--dim); }
+    .dash-cell.wide { grid-column: span 6; }
+    .spark { font-size: 20px; letter-spacing: 1px; color: var(--cyan); white-space: nowrap; overflow: hidden; }
+    .spark .f { color: var(--red); }
+    .sevline { font-size: 13px; white-space: pre; color: var(--muted); margin-top: 8px; font-family: var(--mono); }
+    .sevline .bar { color: var(--cyan); } .sevline .bar.r { color: var(--red); } .sevline .bar.o { color: var(--orange); } .sevline .bar.y { color: var(--amber); } .sevline .bar.b { color: var(--blue); }
+    .tag-sample { color: var(--amber); border: 1px solid rgba(251,191,36,0.4); padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .list-rows { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .list-rows div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+    .list-rows div:last-child { border-bottom: 0; }
+    .report-note { margin-top: 12px; font-size: 12.5px; color: var(--dim); }
+
+    /* ---------- Features table ---------- */
+    .table { border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+    .trow { display: grid; grid-template-columns: 118px 1.1fr 1.5fr; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--line); align-items: start; transition: background 0.2s; }
+    .trow:last-child { border-bottom: 0; }
+    .trow:hover { background: rgba(34,211,238,0.035); }
+    .trow .st { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-align: center; white-space: nowrap; width: fit-content; }
+    .st.av { color: var(--green); border: 1px solid rgba(74,222,128,0.4); }
+    .st.pl { color: var(--violet); border: 1px solid rgba(167,139,250,0.4); }
+    .trow .nm { font-weight: 700; }
+    .trow .ds { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .trow .ex { color: var(--dim); font-size: 12.5px; }
+    .trow .ex b { color: var(--amber); font-weight: 500; }
+
+    /* ---------- Pipeline ---------- */
+    .pipe { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+    .stage { padding: 22px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 60%, transparent); position: relative; transition: background 0.4s; }
+    .stage:last-child { border-right: 0; }
+    .stage .n { font-size: 12px; color: var(--dim); }
+    .stage h3 { font-size: 18px; font-weight: 800; margin-top: 6px; }
+    .stage p { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+    .stage .arrow { position: absolute; right: -11px; top: 50%; transform: translateY(-50%); z-index: 2; color: var(--cyan); background: var(--bg); width: 22px; text-align: center; font-size: 16px; }
+    .stage:last-child .arrow { display: none; }
+    .stage.on { background: rgba(34,211,238,0.06); }
+    .stage.on h3 { color: var(--cyan); }
+    .stage .state { margin-top: 12px; font-size: 12px; color: var(--dim); }
+    .stage.on .state { color: var(--green); }
+
+    /* ---------- Quickstart / API ---------- */
+    .cmdblock { border: 1px solid var(--line-2); border-radius: 10px; background: var(--input-bg); padding: 18px 20px; font-size: 13.5px; overflow-x: auto; }
+    .cmdblock .row { display: block; white-space: pre; color: var(--text); }
+    .cmdblock .row .pr { color: var(--green); }
+    .cmdblock .row .cm { color: var(--dim); }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .tbl th, .tbl td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .tbl th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .tbl td:first-child { white-space: nowrap; }
+    .tbl .meth { color: var(--cyan); font-weight: 700; }
+    .tbl code { color: var(--text); }
+    .tbl-wrap { border: 1px solid var(--line-2); border-radius: 10px; overflow-x: auto; background: var(--panel); }
+
+    /* ---------- Sample report ---------- */
+    .report-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+    .report-meta div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+    .report-meta b { display: block; color: var(--text); font-weight: 700; }
+    .findings { border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+    .f-item { border-bottom: 1px solid var(--line); }
+    .f-item:last-child { border-bottom: 0; }
+    .f-btn { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 18px; transition: background 0.2s; }
+    .f-btn:hover { background: rgba(127,127,127,0.06); }
+    .sev { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 4px; width: 84px; text-align: center; }
+    .sev.high { color: var(--orange); border: 1px solid rgba(251,146,60,0.45); }
+    .sev.med { color: var(--amber); border: 1px solid rgba(251,191,36,0.45); }
+    .sev.low { color: var(--blue); border: 1px solid rgba(96,165,250,0.45); }
+    .f-title { font-weight: 600; }
+    .f-meta { color: var(--dim); font-size: 12.5px; }
+    .f-toggle { color: var(--cyan); font-size: 13px; transition: transform 0.25s; }
+    .f-btn[aria-expanded="true"] .f-toggle { transform: rotate(90deg); }
+    .f-panel { display: none; padding: 4px 18px 22px; }
+    .f-panel.open { display: block; animation: rise 0.35s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .f-panel h4 { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin: 16px 0 6px; font-weight: 700; }
+    .f-panel p, .f-panel li { color: var(--muted); font-size: 14px; }
+    .f-panel ol { padding-left: 22px; }
+    .code { background: var(--input-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: 12.5px; color: var(--text); overflow-x: auto; white-space: pre; line-height: 1.7; }
+    .code .c { color: var(--dim); } .code .r { color: var(--red); } .code .g { color: var(--green); } .code .k { color: var(--violet); }
+    .verdict { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 4px; }
+    .verdict.v { color: var(--green); border: 1px solid rgba(74,222,128,0.45); }
+    .verdict.p { color: var(--amber); border: 1px solid rgba(251,191,36,0.45); }
+    .verdict.q { color: var(--blue); border: 1px solid rgba(96,165,250,0.45); }
+    .honest { margin-top: 14px; border-left: 2px solid var(--amber); padding: 8px 14px; font-size: 13px; color: var(--muted); background: rgba(251,191,36,0.05); border-radius: 0 8px 8px 0; }
+    .honest b { color: var(--amber); font-weight: 700; }
+
+    /* ---------- Why / Privacy / Status ---------- */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .lines { font-size: 14px; color: var(--muted); display: grid; gap: 10px; }
+    .lines div::before { content: "- "; color: var(--cyan); }
+    .lines b { color: var(--text); font-weight: 600; }
+    .status-list { font-size: 14px; display: grid; gap: 8px; }
+    .status-list div { display: flex; gap: 12px; align-items: baseline; }
+    .status-list .s1 { min-width: 110px; font-weight: 700; }
+    .status-list .s1.a { color: var(--green); } .status-list .s1.p { color: var(--violet); }
+
+    /* ---------- FAQ ---------- */
+    .faq { display: grid; gap: 10px; }
+    .faq details { border: 1px solid var(--line-2); border-radius: 10px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+    .faq details[open] { border-color: var(--cyan); }
+    .faq summary { list-style: none; cursor: pointer; padding: 16px 18px; font-weight: 700; display: flex; justify-content: space-between; gap: 12px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; color: var(--cyan); font-size: 18px; line-height: 1; }
+    .faq details[open] summary::after { content: "-"; }
+    .faq .ans { padding: 0 18px 18px; color: var(--muted); font-size: 14px; }
+
+    /* ---------- Final ---------- */
+    .final { padding: 90px 0 60px; }
+    .final h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1.2; }
+    .final h2 .g { color: var(--green); }
+    .final .row { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* ---------- Footer ---------- */
+    footer { border-top: 1px solid var(--line); padding: 34px 0 40px; color: var(--dim); font-size: 13px; }
+    .foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 26px; }
+    .foot h5 { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .foot a { display: block; padding: 3px 0; color: var(--dim); }
+    .foot a:hover { color: var(--cyan); }
+    .foot-end { margin-top: 26px; padding-top: 16px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+    /* ---------- Reveal ---------- */
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ---------- Console ---------- */
+    .con-back { position: fixed; inset: 0; z-index: 250; background: rgba(2,4,10,0.7); display: flex; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+    .con-back[hidden] { display: none; }
+    .con { width: min(720px, 100%); max-height: 86vh; display: flex; flex-direction: column; border: 1px solid var(--line-2); border-radius: 12px; background: var(--panel); box-shadow: 0 30px 80px rgba(0,0,0,0.5); overflow: hidden; }
+    .con-out { flex: 1; min-height: 260px; overflow: auto; padding: 16px 18px; font-size: 13.5px; color: var(--muted); }
+    .con-out .ln { white-space: pre-wrap; word-break: break-word; }
+    .con-out .ln.p { color: var(--cyan); }
+    .con-out .ln.d { color: var(--dim); }
+    .con-out .ln.bad { color: var(--red); }
+    .con-form { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-top: 1px solid var(--line); }
+    .con-form .pr { color: var(--green); }
+    .con-form input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--text); font: inherit; font-size: 14px; }
+    .con-form input::placeholder { color: var(--dim); opacity: 1; }
+    .con-foot { padding: 10px 18px; border-top: 1px solid var(--line); display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; }
+    .con-foot a { color: var(--cyan); }
+    body.console-open { overflow: hidden; }
+
+    /* ---------- Console overlay ---------- */
+    .cx { position: fixed; inset: 0; z-index: 300; background: #060a12; }
+    .cx[hidden] { display: none; }
+    .cx-bar { position: absolute; top: 0; left: 0; right: 0; height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; background: #0a1120; border-bottom: 1px solid #1a2740; font-size: 12.5px; color: #8fa1bf; z-index: 2; }
+    .cx-bar b { color: #22d3ee; font-weight: 600; }
+    .cx-close { border: 1px solid #26385a; border-radius: 8px; padding: 5px 11px; color: #d7e3f4; background: #0e182b; font-size: 12.5px; }
+    .cx-close:hover { border-color: #22d3ee; color: #22d3ee; }
+    .cx-close kbd { font-family: var(--mono); font-size: 11px; color: #8fa1bf; margin-left: 6px; }
+    .cx iframe { position: absolute; top: 44px; left: 0; width: 100%; height: calc(100% - 44px); border: 0; background: #05060c; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 960px) {
+      .nav-links { display: none; }
+      .nav-right .sign, .nav-right .kbd-hint { display: none; }
+      .menu-btn { display: inline-block; }
+      .dash-cell, .dash-cell.wide { grid-column: span 6; }
+      .pipe { grid-template-columns: repeat(2, 1fr); }
+      .stage:nth-child(2) { border-right: 0; }
+      .stage { border-bottom: 1px solid var(--line); }
+      .stage .arrow { display: none; }
+      .foot { grid-template-columns: 1fr 1fr; }
+      .two { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      section { padding: 70px 0 30px; }
+      .hero { padding-top: 110px; }
+      .cmd { padding: 8px 10px; }
+      .cmd .pr, .cmd .bin { font-size: 13px; }
+      .cmd .btn { width: 100%; justify-content: center; margin: 8px 0 0; }
+      .cmd input { min-width: 0; width: 100%; }
+      .trow { grid-template-columns: 1fr; gap: 8px; }
+      .pipe { grid-template-columns: 1fr; }
+      .stage { border-right: 0; }
+      .dash-cell, .dash-cell.wide { grid-column: span 12; }
+      .report-meta { grid-template-columns: 1fr; }
+      .f-btn { grid-template-columns: auto 1fr; }
+      .f-toggle { display: none; }
+      .foot { grid-template-columns: 1fr; }
+      .term-body { padding: 16px; }
+      .cmdblock { font-size: 12.5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      .l, .reveal { opacity: 1 !important; transform: none !important; }
+    }
+
+    /* ---------- Print: report and features readable on paper ---------- */
+    @media print {
+      :root, [data-theme="light"] { --bg: #fff; --panel: #fff; --panel-2: #fff; --input-bg: #fff; --line: #ccc; --line-2: #999; --text: #000; --muted: #333; --dim: #555; --cyan: #000; --green: #000; --amber: #000; --red: #000; --blue: #000; --violet: #000; --orange: #000; }
+      body { background: #fff; color: #000; }
+      .nav, .mobile, .pal-back, .bg-scan, .bg-glow, .copy, .cmd-form, .scan-out, .hero, #features, #how, #product, #status, #docs, #start, .foot, footer, .link-btn, .hero-foot { display: none !important; }
+      section { padding: 10px 0; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+      .f-panel { display: block !important; }
+      .term, .findings, .tbl-wrap, .cmdblock { box-shadow: none; }
+      .report-note { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+  <a href="#main" class="skip">Skip to content</a>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-scan" aria-hidden="true"></div>
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav" id="nav">
+    <div class="wrap nav-in">
+      <a href="#top" class="brand" aria-label="Failora home"><span class="pr">$</span> failora</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#product" data-nav>product</a>
+        <a href="#features" data-nav>features</a>
+        <a href="#how" data-nav>how-it-works</a>
+        <a href="#quickstart" data-nav>quickstart</a>
+        <a href="#docs" data-nav>docs</a>
+      </nav>
+      <div class="nav-right">
+        <button class="icon-btn kbd-hint" id="palBtn" type="button" aria-haspopup="dialog">search <kbd>Ctrl K</kbd></button>
+        <button class="icon-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to light theme">light</button>
+        <a href="#privacy" class="sign">sign in</a>
+        <button type="button" class="btn" data-open-console aria-haspopup="dialog">Get Started</button>
+        <button class="icon-btn menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mobile" aria-label="Open menu" type="button">menu</button>
+      </div>
+    </div>
+  </header>
+  <nav class="mobile" id="mobile" aria-label="Mobile">
+    <a href="#product">product</a>
+    <a href="#features">features</a>
+    <a href="#how">how-it-works</a>
+    <a href="#quickstart">quickstart</a>
+    <a href="#docs">docs</a>
+    <a href="#privacy">sign in</a>
+  </nav>
+
+  <!-- ===================== COMMAND PALETTE ===================== -->
+  <div class="pal-back" id="palBack" hidden>
+    <div class="pal" role="dialog" aria-modal="true" aria-labelledby="palLabel">
+      <label id="palLabel" class="sr-only">Jump to a section</label>
+      <input id="palInput" type="text" placeholder="jump to a section..." autocomplete="off" />
+      <ul id="palList" role="listbox" aria-label="Sections"></ul>
+      <div class="hint"><span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> move</span><span><kbd>Enter</kbd> go</span><span><kbd>Esc</kbd> close</span><span><kbd>/</kbd> focus scan input</span></div>
+    </div>
+  </div>
+
+  <main id="main">
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hero wrap" id="top">
+    <div class="term reveal in">
+      <div class="term-bar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="title">failora ~ zsh</span>
+        <span class="tag">v0.1.0</span>
+      </div>
+      <div class="term-body">
+        <div><span style="color:var(--green)">$</span> <span class="p">failora</span> <span class="m">--tagline</span></div>
+        <div class="hero-title" id="heroTitle" aria-label="Find the Failure. Prove the Recovery.">
+          <span class="g">&gt;</span> Find the Failure.<br />
+          <span class="c">&gt;</span> Prove the Recovery.
+        </div>
+        <p class="hero-sub">Detect reliability gaps, investigate failures, and verify recovery with evidence.</p>
+
+        <form class="cmd-form" id="scanForm" novalidate>
+          <label class="sr-only" for="target">Website URL or GitHub repository</label>
+          <div class="cmd" id="cmdBox">
+            <span class="pr">$</span><span class="bin">failora scan</span>
+            <input id="target" name="target" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+                   placeholder="https://your-site.com" aria-describedby="formErr formNote" />
+            <button type="submit" class="btn">Scan Project</button>
+          </div>
+          <div class="form-err" id="formErr" role="alert"></div>
+          <div class="form-row" id="formNote">
+            <span>Simulated demo. Nothing you type is sent anywhere.</span>
+            <button type="button" class="link-btn" id="sampleBtn">Try a sample report</button>
+          </div>
+        </form>
+
+        <noscript><p class="nojs">JavaScript is off. The scan demo and expandable findings need JavaScript. The rest of the page reads normally.</p></noscript>
+
+        <div class="scan-out term" id="scanOut" role="status" aria-live="polite">
+          <div class="term-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="title">failora scan</span><span class="tag">simulated</span></div>
+          <div class="term-body" id="scanLines">
+            <p class="sim-note">Simulation: no request is sent and no real scan runs. Real scanning is not part of the current release.</p>
+          </div>
+        </div>
+
+        <div class="hero-foot">
+          <span>public URLs and repositories</span>
+          <span>evidence for every finding</span>
+          <span>repeatable regression tests</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="product">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora dashboard <span class="arg">--sample</span></div>
+      <div class="term reveal">
+        <div class="term-bar">
+          <span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="title">app.failora.dev / acme-checkout</span>
+          <span class="tag-sample">SAMPLE DATA</span>
+        </div>
+        <div class="term-body">
+          <div class="dash-grid">
+            <div class="dash-cell"><div class="lab">Uptime</div><div class="val"><span data-count="99.94" data-dec="2">0</span><small>%</small></div><div class="sub">+0.12% vs 7d</div></div>
+            <div class="dash-cell"><div class="lab">Avg response p50</div><div class="val"><span data-count="238">0</span><small>ms</small></div><div class="sub">-18 ms vs 7d</div></div>
+            <div class="dash-cell"><div class="lab">Open issues</div><div class="val"><span data-count="17">0</span></div><div class="sub" style="color:var(--red)">+3 since last scan</div></div>
+            <div class="dash-cell"><div class="lab">Recovery tests</div><div class="val"><span data-count="12">0</span><small>/14 passing</small></div><div class="sub">2 need a fallback fix</div></div>
+
+            <div class="dash-cell wide">
+              <div class="lab">Heartbeat, last 60 checks</div>
+              <div class="spark" id="heartbeat" aria-hidden="true"></div>
+              <div class="sub">red = failed check</div>
+            </div>
+            <div class="dash-cell wide">
+              <div class="lab">Response time, last 24h</div>
+              <div class="spark" id="latency" aria-hidden="true"></div>
+              <div class="sub">p50 in ms, sample series</div>
+            </div>
+
+            <div class="dash-cell wide">
+              <div class="lab">Issues by severity</div>
+              <pre class="sevline" id="sevBars" aria-label="Sample issues by severity"></pre>
+            </div>
+            <div class="dash-cell wide">
+              <div class="lab">Recovery test results</div>
+              <div class="list-rows">
+                <div><span>timeout -&gt; retry -&gt; success</span><span class="ok">PASS 412ms</span></div>
+                <div><span>HTTP 429 honors Retry-After</span><span class="ok">PASS 3/3</span></div>
+                <div><span>malformed JSON -&gt; fallback</span><span class="bad">GAP</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="report-note">All values on this preview are sample data, not a live monitor.</p>
+    </div>
+  </section>
+
+  <!-- ===================== FEATURES ===================== -->
+  <section id="features">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora detect <span class="arg">--list</span></div>
+      <h2 class="h-big reveal">What Failora detects</h2>
+      <p class="lead reveal">Each category is marked as available today or planned. Examples show the kind of finding you would see, not live results.</p>
+
+      <div class="table reveal" role="table" aria-label="Detection categories and status">
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">AI retry, fallback and recovery</div><div class="ds">Checks whether retries and fallbacks actually run when an AI call fails.</div></div>
+          <div role="cell"><div class="ex">example: <b>HTTP 429 received, no retry and no fallback.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">API failures and performance</div><div class="ds">Runs timeout, 429, 500 and malformed scenarios against an endpoint.</div></div>
+          <div role="cell"><div class="ex">example: <b>POST /respond: 6% HTTP 500 in the sample run.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">Regression tests from failures</div><div class="ds">Turns a failing scenario into a repeatable test.</div></div>
+          <div role="cell"><div class="ex">example: <b>timeout scenario saved as a test for every commit.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Website health and availability</div><div class="ds">Checks that a public URL responds, and how fast it does.</div></div>
+          <div role="cell"><div class="ex">example: <b>homepage returned 503 on 2 of 20 checks.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Security and configuration gaps</div><div class="ds">Flags missing headers and settings that weaken a deployment.</div></div>
+          <div role="cell"><div class="ex">example: <b>Content-Security-Policy header is not set.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Repository reliability issues</div><div class="ds">Finds code paths that can hang or fail without handling.</div></div>
+          <div role="cell"><div class="ex">example: <b>src/client.ts:42 fetch() has no timeout.</b></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section id="how">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora pipeline <span class="arg">--run</span></div>
+      <h2 class="h-big reveal">How it works</h2>
+      <div class="pipe reveal" id="pipe">
+        <div class="stage" data-stage>
+          <div class="n">step 01</div><h3>Scan</h3>
+          <p>Website or GitHub repository analyzed.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 02</div><h3>Detect</h3>
+          <p>Potential gaps and failures identified.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 03</div><h3>Verify</h3>
+          <p>Recovery behavior and fixes tested.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 04</div><h3>Prevent</h3>
+          <p>Regression tests and evidence reports created.</p>
+          <div class="state">waiting</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== QUICKSTART + API (real commands from the repo README) ===================== -->
+  <section id="quickstart">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora quickstart <span class="arg">--from-readme</span></div>
+      <h2 class="h-big reveal">Run it locally in a few commands</h2>
+      <p class="lead reveal">These are the commands from the project README. Nothing here is simulated.</p>
+
+      <div class="cmdblock has-copy reveal" id="installBlock" data-copy="git clone https://github.com/madhavikodale/Failora.git
+cd Failora
+npm install
+cp .env.example .env
+npm run mock-ai
+npm run start --workspace=packages/api
+npm run test
+npm run typecheck">
+        <span class="row"><span class="pr">$</span> git clone https://github.com/madhavikodale/Failora.git</span>
+        <span class="row"><span class="pr">$</span> cd Failora</span>
+        <span class="row"><span class="pr">$</span> npm install</span>
+        <span class="row"><span class="pr">$</span> cp .env.example .env</span>
+        <span class="row"><span class="pr">$</span> npm run mock-ai <span class="cm"># mock AI service, bound to 127.0.0.1</span></span>
+        <span class="row"><span class="pr">$</span> npm run start --workspace=packages/api <span class="cm"># API on port 4200</span></span>
+        <span class="row"><span class="pr">$</span> npm run test</span>
+        <span class="row"><span class="pr">$</span> npm run typecheck</span>
+      </div>
+
+      <div class="sub-h reveal">API endpoints</div>
+      <div class="tbl-wrap reveal">
+        <table class="tbl">
+          <thead><tr><th scope="col">Method</th><th scope="col">Endpoint</th><th scope="col">Description</th></tr></thead>
+          <tbody>
+            <tr><td class="meth">GET</td><td><code>/health</code></td><td>Health check</td></tr>
+            <tr><td class="meth">POST</td><td><code>/targets</code></td><td>Create a test target</td></tr>
+            <tr><td class="meth">GET</td><td><code>/targets</code></td><td>List all targets</td></tr>
+            <tr><td class="meth">GET</td><td><code>/targets/:id</code></td><td>Get target by ID</td></tr>
+            <tr><td class="meth">DELETE</td><td><code>/targets/:id</code></td><td>Delete target</td></tr>
+            <tr><td class="meth">POST</td><td><code>/runs</code></td><td>Execute a scenario (async, returns 202)</td></tr>
+            <tr><td class="meth">GET</td><td><code>/runs?target_id=</code></td><td>List runs, filtered by target</td></tr>
+            <tr><td class="meth">GET</td><td><code>/runs/:id</code></td><td>Get run result</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sub-h reveal">Mock AI failure modes</div>
+      <div class="tbl-wrap reveal">
+        <table class="tbl">
+          <thead><tr><th scope="col">Request</th><th scope="col">What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>ANY /respond?mode=ok</code></td><td>Normal 200 response</td></tr>
+            <tr><td><code>ANY /respond?mode=slow&amp;delay=5000</code></td><td>Delays, then responds. Use for timeout tests</td></tr>
+            <tr><td><code>ANY /respond?mode=429</code></td><td>Returns HTTP 429 with Retry-After</td></tr>
+            <tr><td><code>ANY /respond?mode=500</code></td><td>Returns HTTP 500</td></tr>
+            <tr><td><code>ANY /respond?mode=malformed</code></td><td>Returns invalid JSON</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sub-h reveal">Create a target and run a scenario</div>
+      <div class="cmdblock has-copy reveal" data-copy="curl -X POST http://127.0.0.1:4200/targets -H &quot;Content-Type: application/json&quot; -d '{&quot;name&quot;:&quot;my-api&quot;,&quot;url&quot;:&quot;http://127.0.0.1:4100/respond&quot;}'
+curl -X POST http://127.0.0.1:4200/runs -H &quot;Content-Type: application/json&quot; -d '{&quot;target_id&quot;:&quot;TARGET_ID&quot;,&quot;mode&quot;:&quot;timeout&quot;,&quot;timeout_ms&quot;:1000,&quot;max_retries&quot;:2}'
+curl http://127.0.0.1:4200/runs/RUN_ID">
+        <span class="row"><span class="pr">$</span> curl -X POST http://127.0.0.1:4200/targets -H "Content-Type: application/json" \</span>
+        <span class="row">    -d '{"name":"my-api","url":"http://127.0.0.1:4100/respond"}'</span>
+        <span class="row"><span class="pr">$</span> curl -X POST http://127.0.0.1:4200/runs -H "Content-Type: application/json" \</span>
+        <span class="row">    -d '{"target_id":"TARGET_ID","mode":"timeout","timeout_ms":1000,"max_retries":2}'</span>
+        <span class="row"><span class="pr">$</span> curl http://127.0.0.1:4200/runs/RUN_ID</span>
+      </div>
+      <p class="report-note reveal">Replace TARGET_ID and RUN_ID with the values returned by the API.</p>
+    </div>
+  </section>
+
+  <!-- ===================== SAMPLE REPORT ===================== -->
+  <section id="report">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora report show <span class="arg">sample-0042</span></div>
+      <h2 class="h-big reveal">Evidence, not guesses</h2>
+
+      <div class="report-meta reveal">
+        <div><span class="m">target</span><b>api.acme.dev/respond</b></div>
+        <div><span class="m">scenarios run</span><b>14</b></div>
+        <div><span class="m">status</span><b><span class="tag-sample">SAMPLE</span></b></div>
+      </div>
+
+      <div class="findings reveal" id="findings"></div>
+      <div class="honest reveal"><b>How this sample was made:</b> hand-written illustrative data, modeled on the failure modes in the Failora README. It is not output from a real run. Use arrow keys to move between findings.</div>
+    </div>
+  </section>
+
+  <!-- ===================== WHY ===================== -->
+  <section>
+    <div class="wrap two">
+      <div class="reveal">
+        <div class="cmd-title"><span class="pr">$</span> cat why-failora.txt</div>
+        <div class="lines">
+          <div><b>Detection with recovery verification.</b> Finding a failure is half the job; Failora checks that retries and fallbacks recover.</div>
+          <div><b>Evidence-based findings.</b> Each issue links to the request, file or line behind it.</div>
+          <div><b>Repeatable regression tests.</b> A failure becomes a test that runs on every change.</div>
+          <div><b>Website and code in one workflow.</b> Planned: check what users reach and what your code does, in one report.</div>
+        </div>
+      </div>
+      <div class="reveal d1" id="privacy">
+        <div class="cmd-title"><span class="pr">$</span> failora privacy</div>
+        <div class="lines">
+          <div><b>This demo</b> runs a simulated scan in your browser. The URL you type is not sent to any server.</div>
+          <div><b>Scanning you run:</b> only URLs you own or have permission to test.</div>
+          <div><b>Failure injection</b> runs against a localhost-only mock service.</div>
+          <div><b>Repositories:</b> access rules will be documented before launch. Read access is limited to repositories you choose.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STATUS ===================== -->
+  <section id="status">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora status</div>
+      <div class="term reveal">
+        <div class="term-body status-list">
+          <div><span class="s1 a">[AVAILABLE]</span><span>Mock failure injection: timeout, 429, 500, malformed responses</span></div>
+          <div><span class="s1 a">[AVAILABLE]</span><span>Retry and fallback checks, with success rate and latency</span></div>
+          <div><span class="s1 a">[AVAILABLE]</span><span>Regression tests built from a failing scenario</span></div>
+          <div><span class="s1 p">[PLANNED]</span><span>Website scanning and repository analysis, not in the current release</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ ===================== -->
+  <section id="docs">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora help <span class="arg">--faq</span></div>
+      <div class="faq reveal">
+        <details open>
+          <summary>What does a URL scan check?</summary>
+          <div class="ans">The planned URL scan will check whether the page responds, how long it takes, and common header and configuration settings. Only scan URLs you own or have permission to test.</div>
+        </details>
+        <details>
+          <summary>How does a private repository connect?</summary>
+          <div class="ans">Repository analysis is planned. The connection flow and access rules will be documented before launch.</div>
+        </details>
+        <details>
+          <summary>How is recovery verification done?</summary>
+          <div class="ans">Failora injects controlled failures such as timeouts, HTTP 429, HTTP 500 and malformed responses into your target. It then checks whether retries and fallbacks run, and records success rate and latency.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL CTA ===================== -->
+  <section class="final" id="start">
+    <div class="wrap reveal">
+      <div class="cmd-title"><span class="pr">$</span> failora start</div>
+      <h2>Ready to find your next <span class="g">reliability gap?</span></h2>
+      <div class="row">
+        <button type="button" class="btn" data-open-console aria-haspopup="dialog">Get Started</button>
+        <a href="#report" class="btn ghost">Explore Demo</a>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- ===================== CONSOLE (opened by Get Started) ===================== -->
+  <div class="con-back" id="conBack" hidden>
+    <div class="con" role="dialog" aria-modal="true" aria-labelledby="conTitle">
+      <div class="term-bar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="title" id="conTitle">failora console</span>
+        <span class="tag">simulated</span>
+        <button type="button" class="icon-btn" id="conClose">close <kbd>Esc</kbd></button>
+      </div>
+      <div class="con-out" id="conOut" role="log" aria-live="polite"></div>
+      <form class="con-form" id="conForm" autocomplete="off">
+        <label for="conInput" class="sr-only">Console command</label>
+        <span class="pr">$</span>
+        <input id="conInput" type="text" spellcheck="false" autocomplete="off" placeholder="type help" />
+      </form>
+      <div class="con-foot">
+        <a href="https://github.com/madhavikodale/Failora" target="_blank" rel="noopener">open repository</a>
+        <a href="#quickstart" id="conQs">full quickstart</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== CONSOLE OVERLAY (opened by Get Started) ===================== -->
+  <div class="cx" id="cx" role="dialog" aria-modal="true" aria-label="Failora console" hidden>
+    <div class="cx-bar">
+      <span><b>Failora</b> console, sample data</span>
+      <button type="button" class="cx-close" id="cxClose">Back to landing <kbd>Esc</kbd></button>
+    </div>
+    <iframe id="cxFrame" title="Failora console"></iframe>
+  </div>
+  <textarea id="console-src" hidden>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8" /&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;
+  &lt;title&gt;Failora Console&lt;/title&gt;
+  &lt;meta name="description" content="Failora console: overview, website monitoring, repository scanner, findings, AI reliability testing, reports and settings. Sample data." /&gt;
+  &lt;meta name="theme-color" content="#0a1020" /&gt;
+  &lt;link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a1020'/%3E%3Cpath d='M8 10l6 6-6 6' stroke='%2322d3ee' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 22h7' stroke='%238b5cf6' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" /&gt;
+  &lt;link rel="preconnect" href="https://fonts.googleapis.com" /&gt;
+  &lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin /&gt;
+  &lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" /&gt;
+  &lt;script&gt;
+    try { if (localStorage.getItem('failora_console_theme') === 'light') document.documentElement.setAttribute('data-theme', 'light'); } catch (e) {}
+  &lt;/script&gt;
+  &lt;style&gt;
+    :root {
+      --side: #0a1020;
+      --bg: #0a1020;
+      --bg-2: #0d1528;
+      --panel: #101a31;
+      --panel-2: #14213d;
+      --line: rgba(148, 170, 220, 0.12);
+      --line-2: rgba(148, 170, 220, 0.2);
+      --text: #e6eefc;
+      --muted: #8ea0c4;
+      --dim: #5f7096;
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --orange: #fb923c;
+      --red: #f87171;
+      --grad: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
+      --grad-2: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      --shadow: 0 12px 32px rgba(2, 6, 23, 0.45);
+      --radius: 16px;
+      --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans); background: var(--bg); color: var(--text);
+      font-size: 14px; line-height: 1.55; min-height: 100vh; -webkit-font-smoothing: antialiased;
+      background-image: radial-gradient(1000px 500px at 80% -10%, rgba(59,130,246,0.10), transparent 60%),
+                        radial-gradient(800px 500px at -10% 110%, rgba(139,92,246,0.10), transparent 60%);
+      background-attachment: fixed;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; background: none; border: 0; }
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 8px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .skip { position: fixed; top: 8px; left: 8px; z-index: 90; background: var(--cyan); color: #04111f; padding: 8px 14px; border-radius: 8px; font-weight: 700; transform: translateY(-200%); }
+    .skip:focus { transform: none; }
+    .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+    .app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
+
+    /* ---------- Sidebar ---------- */
+    .side { background: var(--side); border-right: 1px solid var(--line); padding: 22px 16px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 0; height: 100vh; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; padding: 0 8px; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 10px; background: var(--grad); display: grid; place-items: center; box-shadow: 0 6px 18px rgba(34,211,238,0.25); }
+    .brand-mark svg { width: 16px; height: 16px; }
+    .nav { display: grid; gap: 4px; }
+    .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 11px; color: var(--muted); font-weight: 500; transition: background 0.2s, color 0.2s; min-height: 42px; }
+    .nav a svg { width: 18px; height: 18px; flex: none; }
+    .nav a:hover { background: rgba(148,170,220,0.07); color: var(--text); }
+    .nav a[aria-current="page"] { background: linear-gradient(90deg, rgba(59,130,246,0.22), rgba(34,211,238,0.06)); color: var(--text); box-shadow: inset 2px 0 0 var(--cyan); }
+    .nav-sep { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; padding: 12px 12px 4px; }
+    .side-foot { margin-top: auto; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; font-size: 12.5px; color: var(--muted); }
+    .side-foot b { color: var(--text); font-weight: 600; display: block; margin-bottom: 4px; }
+    .side-foot .tag { display: inline-block; margin-top: 8px; font-size: 11px; color: var(--amber); border: 1px solid rgba(251,191,36,0.4); border-radius: 999px; padding: 1px 9px; }
+
+    /* ---------- Main ---------- */
+    .main { padding: 22px 30px 48px; min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
+    .search { position: relative; flex: 1; max-width: 420px; min-width: 200px; }
+    .search input { width: 100%; background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; padding: 10px 14px 10px 40px; font-size: 13.5px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .search input::placeholder { color: var(--dim); opacity: 1; }
+    .search input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); outline: none; }
+    .search svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--dim); }
+    .top-right { display: flex; align-items: center; gap: 10px; }
+    .iconbtn { width: 40px; height: 40px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; place-items: center; color: var(--muted); }
+    .iconbtn:hover { color: var(--text); border-color: var(--line-2); }
+    .iconbtn svg { width: 17px; height: 17px; }
+    .avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--grad-2); display: grid; place-items: center; font-weight: 600; font-size: 13px; color: #fff; }
+
+    .view-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+    .view-h h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.015em; outline: none; }
+    .view-h p { color: var(--muted); margin-top: 4px; }
+    .tag-sample { font-size: 11px; font-weight: 600; color: var(--amber); border: 1px solid rgba(251,191,36,0.4); border-radius: 999px; padding: 2px 10px; letter-spacing: 0.03em; white-space: nowrap; }
+
+    /* ---------- Shared components ---------- */
+    .card { background: linear-gradient(180deg, var(--panel), var(--bg-2)); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; min-width: 0; animation: rise 0.45s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .card-h h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .muted { color: var(--muted); }
+    .dim { color: var(--dim); }
+    .grid { display: grid; gap: 18px; }
+    .g-kpi { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mb { margin-bottom: 18px; }
+
+    .kpi .lab { font-size: 12.5px; color: var(--muted); }
+    .kpi .val { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .kpi .val small { font-size: 14px; color: var(--muted); font-weight: 500; }
+    .kpi .d { font-size: 12px; margin-top: 2px; color: var(--green); }
+    .kpi .d.bad { color: var(--red); }
+    .kpi .bar { height: 4px; border-radius: 4px; background: rgba(148,170,220,0.12); margin-top: 12px; overflow: hidden; }
+    .kpi .bar i { display: block; height: 100%; background: var(--grad); border-radius: 4px; width: 0; transition: width 1s ease; }
+
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .b-ok { color: var(--green); background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.3); }
+    .b-warn { color: var(--amber); background: rgba(251,191,36,0.10); border-color: rgba(251,191,36,0.3); }
+    .b-bad { color: var(--red); background: rgba(248,113,113,0.10); border-color: rgba(248,113,113,0.3); }
+    .b-info { color: var(--cyan); background: rgba(34,211,238,0.10); border-color: rgba(34,211,238,0.3); }
+    .b-purple { color: #c4b5fd; background: rgba(139,92,246,0.14); border-color: rgba(139,92,246,0.35); }
+    .b-muted { color: var(--muted); background: rgba(148,170,220,0.08); border-color: var(--line-2); }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; background: var(--grad); color: #04111f; font-weight: 600; font-size: 13.5px; box-shadow: 0 8px 22px rgba(34,211,238,0.18); transition: transform 0.2s, box-shadow 0.2s; white-space: nowrap; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(34,211,238,0.28); }
+    .btn svg { width: 15px; height: 15px; }
+    .btn.ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); box-shadow: none; }
+    .btn.ghost:hover { border-color: var(--blue); box-shadow: none; }
+    .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .btn-sm { font-size: 12.5px; padding: 6px 12px; border-radius: 9px; }
+
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { font-size: 12.5px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); background: var(--panel-2); min-height: 32px; }
+    .chip:hover { color: var(--text); }
+    .chip[aria-pressed="true"] { background: var(--grad-2); border-color: transparent; color: #fff; }
+
+    .tbl-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { font-size: 11.5px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; background: var(--bg-2); }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover td { background: rgba(59,130,246,0.05); }
+    tbody tr.sel td { background: rgba(59,130,246,0.1); }
+    tr.click { cursor: pointer; }
+    .empty td { text-align: center; color: var(--dim); padding: 22px; }
+    .note { font-size: 12px; color: var(--dim); margin-top: 12px; }
+    .note a { color: var(--cyan); }
+
+    .field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+    .field input, .field select { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 11px; padding: 10px 12px; font-size: 13.5px; color: var(--text); width: 100%; }
+    .field input::placeholder { color: var(--dim); opacity: 1; }
+    .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.2); outline: none; }
+    .field .err { color: var(--red); font-size: 12px; min-height: 1em; }
+    .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .row &gt; .field { flex: 1; min-width: 220px; }
+
+    .toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .toggle:last-child { border-bottom: 0; }
+    .toggle .t1 { font-weight: 500; }
+    .toggle .t2 { font-size: 12.5px; color: var(--dim); }
+    .switch { position: relative; width: 44px; height: 24px; flex: none; }
+    .switch input { opacity: 0; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+    .switch span { position: absolute; inset: 0; border-radius: 999px; background: rgba(148,170,220,0.22); transition: background 0.2s; }
+    .switch span::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform 0.2s; }
+    .switch input:checked + span { background: var(--grad); }
+    .switch input:checked + span::after { transform: translateX(20px); }
+    .switch input:focus-visible + span { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+    .list { display: grid; gap: 10px; }
+    .li { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.015); }
+    .li .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
+    .li .ic svg { width: 17px; height: 17px; }
+    .li .t { font-weight: 500; }
+    .li .s { font-size: 12.5px; color: var(--dim); }
+
+    .progress { height: 8px; border-radius: 8px; background: rgba(148,170,220,0.12); overflow: hidden; }
+    .progress i { display: block; height: 100%; width: 0; background: var(--grad); border-radius: 8px; transition: width 0.4s ease; }
+    .steps { display: grid; gap: 8px; margin-top: 14px; font-size: 13px; }
+    .steps div { display: flex; gap: 10px; align-items: center; color: var(--dim); }
+    .steps div.on { color: var(--text); }
+    .steps div.done { color: var(--green); }
+    .steps i { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+    .steps div.on i { background: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,0.15); }
+    .steps div.done i { background: var(--green); }
+
+    .svgc { width: 100%; height: auto; display: block; }
+    .svgc text { font-family: var(--sans); font-size: 11px; fill: var(--dim); }
+    .hb { display: flex; gap: 3px; align-items: flex-end; height: 34px; }
+    .hb i { flex: 1; min-width: 2px; border-radius: 2px; background: var(--green); opacity: 0.85; }
+    .hb i.d { background: var(--red); }
+    .hb i.w { background: var(--amber); }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+    .sev { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 7px; }
+    .sev.critical { color: #fecaca; background: rgba(248,113,113,0.2); }
+    .sev.high { color: #fed7aa; background: rgba(251,146,60,0.18); }
+    .sev.medium { color: #fde68a; background: rgba(251,191,36,0.16); }
+    .sev.low { color: #bfdbfe; background: rgba(59,130,246,0.18); }
+    .code { font-family: var(--mono); font-size: 12.5px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; white-space: pre; color: var(--text); line-height: 1.7; }
+    .code .c { color: var(--dim); } .code .r { color: var(--red); } .code .g { color: var(--green); } .code .k { color: #c4b5fd; }
+    .detail h4 { font-size: 11.5px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 6px; font-weight: 600; }
+    .detail p { color: var(--muted); font-size: 13.5px; }
+    .detail .title { font-size: 16px; font-weight: 600; }
+
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text); padding: 11px 18px; border-radius: 12px; font-size: 13px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; z-index: 80; max-width: calc(100% - 32px); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    [hidden] { display: none !important; }
+
+    /* ---------- Light theme ---------- */
+    [data-theme="light"] {
+      --bg: #f3f6fc;
+      --bg-2: #ffffff;
+      --side: #ffffff;
+      --panel: #ffffff;
+      --panel-2: #eef3fb;
+      --line: rgba(15, 23, 42, 0.10);
+      --line-2: rgba(15, 23, 42, 0.18);
+      --text: #0f172a;
+      --muted: #475569;
+      --dim: #64748b;
+      --cyan: #0e7490;
+      --blue: #2563eb;
+      --purple: #7c3aed;
+      --green: #047857;
+      --amber: #b45309;
+      --orange: #c2410c;
+      --red: #b91c1c;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+    [data-theme="light"] body {
+      background-image: radial-gradient(1000px 500px at 80% -10%, rgba(59,130,246,0.08), transparent 60%),
+                        radial-gradient(800px 500px at -10% 110%, rgba(139,92,246,0.07), transparent 60%);
+    }
+    [data-theme="light"] .side { background: var(--side); }
+    [data-theme="light"] .b-purple { color: #6d28d9; }
+    [data-theme="light"] .code .k { color: #6d28d9; }
+    [data-theme="light"] .code .r { color: #b91c1c; }
+    [data-theme="light"] .code .g { color: #047857; }
+    [data-theme="light"] .sev.critical { color: #991b1b; background: rgba(220,38,38,0.12); }
+    [data-theme="light"] .sev.high { color: #9a3412; background: rgba(234,88,12,0.12); }
+    [data-theme="light"] .sev.medium { color: #92400e; background: rgba(217,119,6,0.14); }
+    [data-theme="light"] .sev.low { color: #1e40af; background: rgba(37,99,235,0.12); }
+    [data-theme="light"] .li .ic[style*="color:#"] { filter: saturate(1.3) brightness(0.72); }
+    [data-theme="light"] .avatar { color: #fff; }
+    [data-theme="light"] .btn { color: #ffffff; }
+    [data-theme="light"] .btn.ghost { color: var(--text); }
+    [data-theme="light"] .chip[aria-pressed="true"] { color: #fff; }
+    [data-theme="light"] .switch span { background: rgba(15,23,42,0.18); }
+    [data-theme="light"] .hb i { opacity: 0.9; }
+    [data-theme="light"] .tag-sample { background: rgba(251,191,36,0.10); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1200px) {
+      .g-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px; gap: 10px; }
+      .nav { display: flex; overflow-x: auto; gap: 4px; flex: 1; min-width: 0; }
+      .nav a { white-space: nowrap; min-height: 40px; padding: 8px 12px; }
+      .nav-sep { display: none; }
+      .side-foot { display: none; }
+      .main { padding: 18px 16px 40px; }
+      .g-2, .g-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .g-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .view-h h1 { font-size: 22px; }
+      .brand span { display: none; }
+      .nav a span.l { display: none; }
+      .kpi .val { font-size: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;a href="#main" class="skip"&gt;Skip to content&lt;/a&gt;
+
+  &lt;div class="app"&gt;
+    &lt;!-- ===================== SIDEBAR ===================== --&gt;
+    &lt;aside class="side" aria-label="Console"&gt;
+      &lt;a href="terminal.html" class="brand" aria-label="Failora home"&gt;
+        &lt;span class="brand-mark" aria-hidden="true"&gt;&lt;svg viewBox="0 0 16 16" fill="none" stroke="#04111f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="M3 4l4 4-4 4"/&gt;&lt;path d="M9 12h4"/&gt;&lt;/svg&gt;&lt;/span&gt;
+        &lt;span&gt;Failora&lt;/span&gt;
+      &lt;/a&gt;
+
+      &lt;nav class="nav" aria-label="Sections"&gt;
+        &lt;a href="#overview" data-view="overview"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;rect x="3" y="3" width="7" height="8" rx="2"/&gt;&lt;rect x="14" y="3" width="7" height="5" rx="2"/&gt;&lt;rect x="14" y="12" width="7" height="9" rx="2"/&gt;&lt;rect x="3" y="15" width="7" height="6" rx="2"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Overview&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#websites" data-view="websites"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;circle cx="12" cy="12" r="9"/&gt;&lt;path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Website monitoring&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#repos" data-view="repos"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;path d="M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 00-6 0C6.8 2.2 5.8 2.5 5.8 2.5a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004.4 8.9c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Repository scanner&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#issues" data-view="issues"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;path d="M12 3l9 16H3z"/&gt;&lt;path d="M12 10v4M12 17v.5"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Issues &amp;amp; findings&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#testing" data-view="testing"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 006.2 21h11.6a2 2 0 001.7-2.5L14 9V3"/&gt;&lt;path d="M7.5 15h9"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;AI reliability tests&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#reports" data-view="reports"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Reports &amp;amp; history&lt;/span&gt;
+        &lt;/a&gt;
+        &lt;a href="#settings" data-view="settings"&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;circle cx="12" cy="12" r="3"/&gt;&lt;path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/&gt;&lt;/svg&gt;
+          &lt;span class="l"&gt;Integrations &amp;amp; settings&lt;/span&gt;
+        &lt;/a&gt;
+      &lt;/nav&gt;
+
+      &lt;div class="side-foot"&gt;
+        &lt;b&gt;Sample mode&lt;/b&gt;
+        Numbers on this console are sample data. Live scanning is not part of the current release.
+        &lt;span class="tag"&gt;SAMPLE&lt;/span&gt;
+      &lt;/div&gt;
+    &lt;/aside&gt;
+
+    &lt;!-- ===================== MAIN ===================== --&gt;
+    &lt;main class="main" id="main"&gt;
+      &lt;div class="topbar"&gt;
+        &lt;label class="search"&gt;
+          &lt;span class="sr-only"&gt;Search this console&lt;/span&gt;
+          &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"&gt;&lt;circle cx="11" cy="11" r="7"/&gt;&lt;path d="M20 20l-3.5-3.5"/&gt;&lt;/svg&gt;
+          &lt;input id="globalSearch" type="text" placeholder="Search projects, issues, scenarios" autocomplete="off" /&gt;
+        &lt;/label&gt;
+        &lt;div class="top-right"&gt;
+          &lt;button class="iconbtn" type="button" id="themeBtn" aria-pressed="false" aria-label="Switch to light theme" title="Switch theme"&gt;
+            &lt;svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;/svg&gt;
+          &lt;/button&gt;
+          &lt;button class="iconbtn" type="button" id="notif" aria-label="Notifications (sample)"&gt;
+            &lt;svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"&gt;&lt;path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/&gt;&lt;path d="M10 20a2 2 0 004 0"/&gt;&lt;/svg&gt;
+          &lt;/button&gt;
+          &lt;div class="avatar" aria-label="Signed in as Madhavi (sample)"&gt;MK&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- ---------- 1. OVERVIEW ---------- --&gt;
+      &lt;section id="v-overview" data-v&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-overview"&gt;Overview&lt;/h1&gt;
+            &lt;p&gt;Projects, issues and recovery at a glance.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SAMPLE DATA&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-kpi mb"&gt;
+          &lt;div class="card kpi"&gt;&lt;div class="lab"&gt;Projects scanned&lt;/div&gt;&lt;div class="val" data-count="8"&gt;0&lt;/div&gt;&lt;div class="d"&gt;+2 this week&lt;/div&gt;&lt;/div&gt;
+          &lt;div class="card kpi"&gt;&lt;div class="lab"&gt;Healthy&lt;/div&gt;&lt;div class="val" data-count="6"&gt;0&lt;/div&gt;&lt;div class="bar"&gt;&lt;i data-w="75"&gt;&lt;/i&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div class="card kpi"&gt;&lt;div class="lab"&gt;Critical&lt;/div&gt;&lt;div class="val" data-count="2"&gt;0&lt;/div&gt;&lt;div class="d bad"&gt;1 new since yesterday&lt;/div&gt;&lt;/div&gt;
+          &lt;div class="card kpi"&gt;&lt;div class="lab"&gt;Detected issues&lt;/div&gt;&lt;div class="val" data-count="41"&gt;0&lt;/div&gt;&lt;div class="d bad"&gt;+5 this week&lt;/div&gt;&lt;/div&gt;
+          &lt;div class="card kpi"&gt;&lt;div class="lab"&gt;Recovery success&lt;/div&gt;&lt;div class="val"&gt;&lt;span data-count="94"&gt;0&lt;/span&gt;&lt;small&gt;%&lt;/small&gt;&lt;/div&gt;&lt;div class="bar"&gt;&lt;i data-w="94"&gt;&lt;/i&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Recovery trend &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;last 14 days&lt;/span&gt;&lt;/div&gt;
+            &lt;svg class="svgc" id="recoveryChart" viewBox="0 0 600 220" role="img" aria-label="Sample recovery success rate over 14 days, between 84 and 98 percent"&gt;&lt;/svg&gt;
+          &lt;/div&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Project health &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;/div&gt;
+            &lt;div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap"&gt;
+              &lt;svg viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Sample: 6 healthy, 2 critical projects"&gt;
+                &lt;circle cx="80" cy="80" r="58" fill="none" stroke="rgba(148,170,220,0.12)" stroke-width="16"/&gt;
+                &lt;circle cx="80" cy="80" r="58" fill="none" stroke="url(#gHealthy)" stroke-width="16" stroke-linecap="round" stroke-dasharray="273 364.4" transform="rotate(-90 80 80)"/&gt;
+                &lt;circle cx="80" cy="80" r="58" fill="none" stroke="#f87171" stroke-width="16" stroke-linecap="round" stroke-dasharray="91 364.4" stroke-dashoffset="-277" transform="rotate(-90 80 80)"/&gt;
+                &lt;defs&gt;&lt;linearGradient id="gHealthy" x1="0" y1="0" x2="1" y2="1"&gt;&lt;stop offset="0" stop-color="#3b82f6"/&gt;&lt;stop offset="1" stop-color="#22d3ee"/&gt;&lt;/linearGradient&gt;&lt;/defs&gt;
+                &lt;text x="80" y="78" text-anchor="middle" style="font-size:24px;font-weight:700;fill:var(--text)"&gt;6 / 8&lt;/text&gt;
+                &lt;text x="80" y="98" text-anchor="middle" style="font-size:11px;fill:var(--muted)"&gt;healthy&lt;/text&gt;
+              &lt;/svg&gt;
+              &lt;div class="list" style="flex:1;min-width:180px"&gt;
+                &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(59,130,246,0.18);color:#93c5fd"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Healthy&lt;/div&gt;&lt;div class="s"&gt;6 projects&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-ok"&gt;OK&lt;/span&gt;&lt;/div&gt;
+                &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(248,113,113,0.18);color:#fca5a5"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Critical&lt;/div&gt;&lt;div class="s"&gt;2 projects&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-bad"&gt;Action&lt;/span&gt;&lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card"&gt;
+          &lt;div class="card-h"&gt;&lt;h3&gt;Recent activity &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;button class="btn ghost btn-sm" type="button" data-go="reports"&gt;View history&lt;/button&gt;&lt;/div&gt;
+          &lt;div class="list" id="activity"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 2. WEBSITE MONITORING ---------- --&gt;
+      &lt;section id="v-websites" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-websites"&gt;Website monitoring&lt;/h1&gt;
+            &lt;p&gt;Up or down status, uptime, heartbeat, latency and SSL.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SAMPLE DATA&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-3 mb" id="siteCards"&gt;&lt;/div&gt;
+
+        &lt;div class="card mb"&gt;
+          &lt;div class="card-h"&gt;
+            &lt;h3&gt;Response time and latency&lt;/h3&gt;
+            &lt;div class="field" style="min-width:200px;gap:0"&gt;
+              &lt;label class="sr-only" for="siteSel"&gt;Choose site&lt;/label&gt;
+              &lt;select id="siteSel"&gt;&lt;/select&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;svg class="svgc" id="latencyChart" viewBox="0 0 600 220" role="img" aria-label="Sample response time for the selected site over 24 hours"&gt;&lt;/svg&gt;
+          &lt;div class="legend"&gt;&lt;span&gt;&lt;i style="background:#22d3ee"&gt;&lt;/i&gt;p50 latency (ms)&lt;/span&gt;&lt;span&gt;&lt;i style="background:#8b5cf6"&gt;&lt;/i&gt;p95 latency (ms)&lt;/span&gt;&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card"&gt;
+          &lt;div class="card-h"&gt;&lt;h3&gt;SSL certificates&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;sample&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="tbl-wrap"&gt;&lt;table&gt;
+            &lt;thead&gt;&lt;tr&gt;&lt;th scope="col"&gt;Site&lt;/th&gt;&lt;th scope="col"&gt;Issuer&lt;/th&gt;&lt;th scope="col"&gt;Expires&lt;/th&gt;&lt;th scope="col"&gt;Status&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+            &lt;tbody id="sslRows"&gt;&lt;/tbody&gt;
+          &lt;/table&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 3. REPOSITORY SCANNER ---------- --&gt;
+      &lt;section id="v-repos" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-repos"&gt;Repository scanner&lt;/h1&gt;
+            &lt;p&gt;Connect a GitHub repository to check code quality, security gaps, error handling and tests.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SIMULATED&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Connect a repository&lt;/h3&gt;&lt;/div&gt;
+            &lt;form id="repoForm" novalidate&gt;
+              &lt;div class="row"&gt;
+                &lt;div class="field"&gt;
+                  &lt;label for="repoIn"&gt;GitHub repository&lt;/label&gt;
+                  &lt;input id="repoIn" type="text" placeholder="owner/repo, e.g. madhavikodale/Failora" autocomplete="off" spellcheck="false" aria-describedby="repoErr" /&gt;
+                  &lt;span class="err" id="repoErr" role="alert"&gt;&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;button class="btn" type="submit" id="scanBtn"&gt;Start scan&lt;/button&gt;
+              &lt;/div&gt;
+            &lt;/form&gt;
+            &lt;p class="note"&gt;The scan is simulated. Nothing is sent to GitHub, and no code is read in this release.&lt;/p&gt;
+            &lt;div class="progress" style="margin-top:16px" aria-hidden="true"&gt;&lt;i id="scanBar"&gt;&lt;/i&gt;&lt;/div&gt;
+            &lt;div class="steps" id="scanSteps" aria-live="polite"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Last result &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;madhavikodale/Failora&lt;/span&gt;&lt;/div&gt;
+            &lt;div class="grid g-2" style="gap:12px"&gt;
+              &lt;div class="card" style="padding:14px;box-shadow:none"&gt;&lt;div class="lab muted" style="font-size:12.5px"&gt;Code quality&lt;/div&gt;&lt;div style="font-size:24px;font-weight:700"&gt;82&lt;small class="muted" style="font-size:13px"&gt; / 100&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;
+              &lt;div class="card" style="padding:14px;box-shadow:none"&gt;&lt;div class="lab muted" style="font-size:12.5px"&gt;Security gaps&lt;/div&gt;&lt;div style="font-size:24px;font-weight:700"&gt;3&lt;/div&gt;&lt;/div&gt;
+              &lt;div class="card" style="padding:14px;box-shadow:none"&gt;&lt;div class="lab muted" style="font-size:12.5px"&gt;Error handling&lt;/div&gt;&lt;div style="font-size:24px;font-weight:700"&gt;5&lt;/div&gt;&lt;/div&gt;
+              &lt;div class="card" style="padding:14px;box-shadow:none"&gt;&lt;div class="lab muted" style="font-size:12.5px"&gt;Missing tests&lt;/div&gt;&lt;div style="font-size:24px;font-weight:700"&gt;4&lt;/div&gt;&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card"&gt;
+          &lt;div class="card-h"&gt;&lt;h3&gt;Findings from the sample scan&lt;/h3&gt;&lt;/div&gt;
+          &lt;div class="list"&gt;
+            &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(251,146,60,0.16);color:#fdba74"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;fetch() without a timeout&lt;/div&gt;&lt;div class="s"&gt;src/client.ts:42 · error handling&lt;/div&gt;&lt;/div&gt;&lt;span class="sev high"&gt;HIGH&lt;/span&gt;&lt;/div&gt;
+            &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(251,191,36,0.16);color:#fde68a"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Retry logic not covered by tests&lt;/div&gt;&lt;div class="s"&gt;src/client.ts · missing tests&lt;/div&gt;&lt;/div&gt;&lt;span class="sev medium"&gt;MEDIUM&lt;/span&gt;&lt;/div&gt;
+            &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(59,130,246,0.16);color:#93c5fd"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Verbose error message in logs&lt;/div&gt;&lt;div class="s"&gt;src/ai.ts:31 · security gap&lt;/div&gt;&lt;/div&gt;&lt;span class="sev low"&gt;LOW&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 4. ISSUES &amp; FINDINGS ---------- --&gt;
+      &lt;section id="v-issues" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-issues"&gt;Issues &amp;amp; findings&lt;/h1&gt;
+            &lt;p&gt;Filter by severity, open an issue for evidence, impact and the recommended fix.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SAMPLE DATA&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card mb"&gt;
+          &lt;div class="card-h"&gt;
+            &lt;div class="chips" role="group" aria-label="Filter by severity" id="sevChips"&gt;&lt;/div&gt;
+            &lt;div class="field" style="min-width:180px;gap:0"&gt;
+              &lt;label class="sr-only" for="statusSel"&gt;Filter by status&lt;/label&gt;
+              &lt;select id="statusSel"&gt;
+                &lt;option value="ALL"&gt;All statuses&lt;/option&gt;
+                &lt;option value="Open"&gt;Open&lt;/option&gt;
+                &lt;option value="In progress"&gt;In progress&lt;/option&gt;
+                &lt;option value="Fixed"&gt;Fixed&lt;/option&gt;
+              &lt;/select&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="tbl-wrap"&gt;&lt;table&gt;
+            &lt;thead&gt;&lt;tr&gt;&lt;th scope="col"&gt;Severity&lt;/th&gt;&lt;th scope="col"&gt;Issue&lt;/th&gt;&lt;th scope="col"&gt;Location&lt;/th&gt;&lt;th scope="col"&gt;Status&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+            &lt;tbody id="issueRows"&gt;&lt;/tbody&gt;
+          &lt;/table&gt;&lt;/div&gt;
+          &lt;p class="note" id="issueCount"&gt;&lt;/p&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card detail" id="issueDetail" aria-live="polite"&gt;&lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 5. AI RELIABILITY TESTING ---------- --&gt;
+      &lt;section id="v-testing" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-testing"&gt;AI reliability tests&lt;/h1&gt;
+            &lt;p&gt;Inject timeouts and HTTP errors, then check that retries and fallbacks recover.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SIMULATED&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Scenarios&lt;/h3&gt;&lt;button class="btn btn-sm" type="button" id="runTests"&gt;Run selected&lt;/button&gt;&lt;/div&gt;
+            &lt;div class="list" id="scenarioList"&gt;&lt;/div&gt;
+            &lt;p class="note"&gt;Runs are simulated in the browser. They do not call your AI service.&lt;/p&gt;
+            &lt;div class="progress" style="margin-top:14px" aria-hidden="true"&gt;&lt;i id="testBar"&gt;&lt;/i&gt;&lt;/div&gt;
+            &lt;p class="note" id="testMsg" aria-live="polite"&gt;&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Recovery by scenario &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;/div&gt;
+            &lt;svg class="svgc" id="recoveryBars" viewBox="0 0 600 240" role="img" aria-label="Sample recovery success by scenario"&gt;&lt;/svg&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card"&gt;
+          &lt;div class="card-h"&gt;&lt;h3&gt;Recovery test results&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;sample run&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="tbl-wrap"&gt;&lt;table&gt;
+            &lt;thead&gt;&lt;tr&gt;&lt;th scope="col"&gt;Scenario&lt;/th&gt;&lt;th scope="col"&gt;Mode&lt;/th&gt;&lt;th scope="col"&gt;Retry&lt;/th&gt;&lt;th scope="col"&gt;Fallback&lt;/th&gt;&lt;th scope="col"&gt;Result&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+            &lt;tbody id="testRows"&gt;&lt;/tbody&gt;
+          &lt;/table&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 6. REPORTS &amp; HISTORY ---------- --&gt;
+      &lt;section id="v-reports" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-reports"&gt;Reports &amp;amp; history&lt;/h1&gt;
+            &lt;p&gt;Past scans, performance over time and failure logs.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div style="display:flex;gap:10px;flex-wrap:wrap"&gt;
+            &lt;button class="btn ghost" type="button" id="exportCsv"&gt;Export CSV&lt;/button&gt;
+            &lt;button class="btn ghost" type="button" id="exportPdf"&gt;Export PDF&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Scan performance &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;score by scan&lt;/span&gt;&lt;/div&gt;
+            &lt;svg class="svgc" id="perfBars" viewBox="0 0 600 220" role="img" aria-label="Sample performance score for six past scans"&gt;&lt;/svg&gt;
+          &lt;/div&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Failure log &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;&lt;/h3&gt;&lt;/div&gt;
+            &lt;div class="list" id="failLog"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="card"&gt;
+          &lt;div class="card-h"&gt;&lt;h3&gt;Scan history&lt;/h3&gt;&lt;span class="dim" style="font-size:12px" id="histCount"&gt;&lt;/span&gt;&lt;/div&gt;
+          &lt;div class="tbl-wrap"&gt;&lt;table&gt;
+            &lt;thead&gt;&lt;tr&gt;&lt;th scope="col"&gt;Date&lt;/th&gt;&lt;th scope="col"&gt;Target&lt;/th&gt;&lt;th scope="col"&gt;Type&lt;/th&gt;&lt;th scope="col"&gt;Issues&lt;/th&gt;&lt;th scope="col"&gt;Score&lt;/th&gt;&lt;th scope="col"&gt;Result&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+            &lt;tbody id="histRows"&gt;&lt;/tbody&gt;
+          &lt;/table&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;!-- ---------- 7. INTEGRATIONS &amp; SETTINGS ---------- --&gt;
+      &lt;section id="v-settings" data-v hidden&gt;
+        &lt;div class="view-h"&gt;
+          &lt;div&gt;
+            &lt;h1 tabindex="-1" id="h-settings"&gt;Integrations &amp;amp; settings&lt;/h1&gt;
+            &lt;p&gt;Connections, API configuration, notifications, team and profile.&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;span class="tag-sample"&gt;SAMPLE&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Integrations&lt;/h3&gt;&lt;/div&gt;
+            &lt;div class="list"&gt;
+              &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(148,170,220,0.12);color:#cbd5e1"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;GitHub&lt;/div&gt;&lt;div class="s"&gt;Repository scanner. Not connected in this release.&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-muted"&gt;Not connected&lt;/span&gt;&lt;/div&gt;
+              &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(34,211,238,0.14);color:#67e8f9"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Local API&lt;/div&gt;&lt;div class="s"&gt;127.0.0.1:4200 · runs and targets&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-info"&gt;Sample&lt;/span&gt;&lt;/div&gt;
+              &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(139,92,246,0.16);color:#c4b5fd"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Mock AI service&lt;/div&gt;&lt;div class="s"&gt;127.0.0.1:4100 · failure modes&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-info"&gt;Sample&lt;/span&gt;&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Profile&lt;/h3&gt;&lt;/div&gt;
+            &lt;form id="profileForm" class="grid" style="gap:12px"&gt;
+              &lt;div class="field"&gt;&lt;label for="pName"&gt;Display name&lt;/label&gt;&lt;input id="pName" type="text" value="Madhavi" autocomplete="off" /&gt;&lt;/div&gt;
+              &lt;div class="field"&gt;&lt;label for="pRole"&gt;Role&lt;/label&gt;&lt;select id="pRole"&gt;&lt;option&gt;Developer&lt;/option&gt;&lt;option&gt;Team lead&lt;/option&gt;&lt;option&gt;QA&lt;/option&gt;&lt;/select&gt;&lt;/div&gt;
+              &lt;div&gt;&lt;button class="btn" type="submit"&gt;Save profile&lt;/button&gt;&lt;/div&gt;
+            &lt;/form&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div class="grid g-2 mb"&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Notifications&lt;/h3&gt;&lt;/div&gt;
+            &lt;div class="toggle"&gt;&lt;div&gt;&lt;div class="t1"&gt;Critical issues&lt;/div&gt;&lt;div class="t2"&gt;Notify when a critical finding appears&lt;/div&gt;&lt;/div&gt;&lt;label class="switch"&gt;&lt;span class="sr-only"&gt;Critical issues&lt;/span&gt;&lt;input type="checkbox" checked /&gt;&lt;span&gt;&lt;/span&gt;&lt;/label&gt;&lt;/div&gt;
+            &lt;div class="toggle"&gt;&lt;div&gt;&lt;div class="t1"&gt;Website down&lt;/div&gt;&lt;div class="t2"&gt;Notify when a site stops responding&lt;/div&gt;&lt;/div&gt;&lt;label class="switch"&gt;&lt;span class="sr-only"&gt;Website down&lt;/span&gt;&lt;input type="checkbox" checked /&gt;&lt;span&gt;&lt;/span&gt;&lt;/label&gt;&lt;/div&gt;
+            &lt;div class="toggle"&gt;&lt;div&gt;&lt;div class="t1"&gt;Weekly report&lt;/div&gt;&lt;div class="t2"&gt;Summary every Monday&lt;/div&gt;&lt;/div&gt;&lt;label class="switch"&gt;&lt;span class="sr-only"&gt;Weekly report&lt;/span&gt;&lt;input type="checkbox" /&gt;&lt;span&gt;&lt;/span&gt;&lt;/label&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="card"&gt;
+            &lt;div class="card-h"&gt;&lt;h3&gt;Team&lt;/h3&gt;&lt;span class="dim" style="font-size:12px"&gt;sample&lt;/span&gt;&lt;/div&gt;
+            &lt;div class="list"&gt;
+              &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(59,130,246,0.18);color:#93c5fd;font-weight:600;font-size:12px;display:grid;place-items:center"&gt;MK&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Madhavi&lt;/div&gt;&lt;div class="s"&gt;Owner&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-purple"&gt;Owner&lt;/span&gt;&lt;/div&gt;
+              &lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(34,211,238,0.14);color:#67e8f9;font-weight:600;font-size:12px;display:grid;place-items:center"&gt;AR&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;Arjun R.&lt;/div&gt;&lt;div class="s"&gt;QA&lt;/div&gt;&lt;/div&gt;&lt;span class="badge b-muted"&gt;Member&lt;/span&gt;&lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/main&gt;
+  &lt;/div&gt;
+
+  &lt;div class="toast" id="toast" role="status" aria-live="polite"&gt;&lt;/div&gt;
+
+  &lt;script&gt;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const esc = (s) =&gt; String(s).replace(/[&amp;&lt;&gt;"']/g, c =&gt; ({ '&amp;':'&amp;amp;','&lt;':'&amp;lt;','&gt;':'&amp;gt;','"':'&amp;quot;',"'":'&amp;#39;' }[c]));
+    const NS = 'http://www.w3.org/2000/svg';
+    const $ = (id) =&gt; document.getElementById(id);
+
+    function toast(msg) {
+      const t = $('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() =&gt; t.classList.remove('show'), 2800);
+    }
+    $('notif').addEventListener('click', () =&gt; toast('No notifications in sample mode.'));
+
+    /* ---------- Theme: dark (default) or light, remembered per browser ---------- */
+    const MOON = '&lt;path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/&gt;';
+    const SUN = '&lt;circle cx="12" cy="12" r="4"/&gt;&lt;path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/&gt;';
+    function applyTheme(t) {
+      const light = t === 'light';
+      if (light) document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.removeAttribute('data-theme');
+      const b = $('themeBtn');
+      b.setAttribute('aria-pressed', String(light));
+      b.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+      $('themeIcon').innerHTML = light ? MOON : SUN;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', light ? '#f3f6fc' : '#0a1020');
+    }
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+    $('themeBtn').addEventListener('click', () =&gt; {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem('failora_console_theme', next); } catch (e) {}
+      toast(next === 'light' ? 'Light theme on.' : 'Dark theme on.');
+    });
+
+    /* ---------- Routing between the seven sections ---------- */
+    const VIEWS = ['overview', 'websites', 'repos', 'issues', 'testing', 'reports', 'settings'];
+    function show(v, focus = true) {
+      if (!VIEWS.includes(v)) v = 'overview';
+      document.querySelectorAll('[data-v]').forEach((s) =&gt; { s.hidden = s.id !== 'v-' + v; });
+      document.querySelectorAll('.nav a').forEach((a) =&gt; {
+        if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      });
+      document.title = 'Failora Console · ' + $('h-' + v).textContent;
+      if (focus) { $('h-' + v).focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); }
+      if (v === 'overview') animateKpis();
+    }
+    addEventListener('hashchange', () =&gt; show(location.hash.slice(1)));
+    document.querySelectorAll('[data-go]').forEach((b) =&gt; b.addEventListener('click', () =&gt; { location.hash = b.dataset.go; }));
+
+    /* ---------- Charts ---------- */
+    function svgEl(tag, attrs, parent) {
+      const n = document.createElementNS(NS, tag);
+      Object.entries(attrs).forEach(([k, v]) =&gt; n.setAttribute(k, v));
+      if (parent) parent.appendChild(n);
+      return n;
+    }
+    function lineChart(svg, series, { min, max, labels, gradId }) {
+      svg.innerHTML = '';
+      const W = 600, H = 220, pl = 44, pr = 12, pt = 14, pb = 26;
+      const defs = svgEl('defs', {}, svg);
+      const g = svgEl('linearGradient', { id: gradId, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+      svgEl('stop', { offset: '0%', 'stop-color': '#22d3ee', 'stop-opacity': 0.3 }, g);
+      svgEl('stop', { offset: '100%', 'stop-color': '#22d3ee', 'stop-opacity': 0 }, g);
+      const X = (i, n) =&gt; pl + (i / (n - 1)) * (W - pl - pr);
+      const Y = (v) =&gt; pt + (1 - (v - min) / (max - min)) * (H - pt - pb);
+      for (let k = 0; k &lt;= 4; k++) {
+        const v = min + ((max - min) * k) / 4;
+        svgEl('line', { x1: pl, x2: W - pr, y1: Y(v), y2: Y(v), stroke: 'rgba(148,170,220,0.10)' }, svg);
+        svgEl('text', { x: pl - 8, y: Y(v) + 4, 'text-anchor': 'end' }, svg).textContent = Math.round(v);
+      }
+      labels.forEach((l, i) =&gt; {
+        if (i % Math.ceil(labels.length / 6) !== 0 &amp;&amp; i !== labels.length - 1) return;
+        svgEl('text', { x: X(i, labels.length), y: H - 6, 'text-anchor': i === 0 ? 'start' : i === labels.length - 1 ? 'end' : 'middle' }, svg).textContent = l;
+      });
+      series.forEach((s, si) =&gt; {
+        const pts = s.data.map((v, i) =&gt; [X(i, s.data.length), Y(v)]);
+        const d = pts.map((p, i) =&gt; (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+        if (si === 0) {
+          svgEl('path', { d: d + ` L${(W - pr).toFixed(1)} ${H - pb} L${pl} ${H - pb} Z`, fill: `url(#${gradId})` }, svg);
+        }
+        svgEl('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+      });
+    }
+    function barChart(svg, items, { max, unit = '', colors }) {
+      svg.innerHTML = '';
+      const W = 600, H = 240, pl = 16, pr = 16, pt = 16, pb = 56;
+      const defs = svgEl('defs', {}, svg);
+      const g = svgEl('linearGradient', { id: 'barGrad', x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+      svgEl('stop', { offset: '0%', 'stop-color': '#22d3ee' }, g);
+      svgEl('stop', { offset: '100%', 'stop-color': '#3b82f6' }, g);
+      const slot = (W - pl - pr) / items.length, bw = Math.min(56, slot * 0.55);
+      items.forEach((it, i) =&gt; {
+        const h = ((it.value / max) * (H - pt - pb));
+        const x = pl + slot * i + (slot - bw) / 2;
+        const y = H - pb - h;
+        svgEl('rect', { x, y, width: bw, height: Math.max(2, h), rx: 8, fill: colors ? colors[i] : 'url(#barGrad)' }, svg);
+        svgEl('text', { x: x + bw / 2, y: y - 6, 'text-anchor': 'middle', style: 'fill:var(--text);font-size:12px;font-weight:600' }, svg).textContent = it.value + unit;
+        const t = svgEl('text', { x: x + bw / 2, y: H - 30, 'text-anchor': 'middle' }, svg);
+        t.textContent = it.label;
+      });
+    }
+
+    /* ---------- OVERVIEW ---------- */
+    const recovery14 = [84, 86, 85, 88, 90, 89, 91, 90, 93, 92, 94, 93, 95, 94];
+    const days14 = Array.from({ length: 14 }, (_, i) =&gt; { const d = new Date(2026, 9, 17 + i); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }); });
+    lineChart($('recoveryChart'), [{ data: recovery14, color: '#8b5cf6' }], { min: 80, max: 100, labels: days14, gradId: 'gRec' });
+    // Use blue-to-cyan line for the main trend
+    $('recoveryChart').querySelectorAll('path[stroke="#8b5cf6"]').forEach((p) =&gt; p.setAttribute('stroke', 'url(#gHealthy)'));
+    const defsRec = $('recoveryChart').querySelector('defs');
+    defsRec.appendChild(Object.assign(document.createElementNS(NS, 'linearGradient'), { id: 'gHealthy' }));
+    (function () {
+      const lg = defsRec.querySelector('#gHealthy');
+      lg.setAttribute('x1', 0); lg.setAttribute('x2', 1); lg.setAttribute('y1', 0); lg.setAttribute('y2', 0);
+      svgEl('stop', { offset: '0%', 'stop-color': '#3b82f6' }, lg);
+      svgEl('stop', { offset: '100%', 'stop-color': '#22d3ee' }, lg);
+    })();
+
+    const ACTIVITY = [
+      { t: 'Scan finished: api.acme.dev', s: 'Score 88 · 2 new issues', tone: 'b-warn', ic: 'M12 3l9 16H3z' },
+      { t: 'Recovery test passed: timeout', s: 'mode=slow, retry succeeded', tone: 'b-ok', ic: 'M5 12l4 4 10-10' },
+      { t: 'Critical issue opened', s: 'Retry ignores Retry-After (sample)', tone: 'b-bad', ic: 'M12 9v4M12 17v.5M4 20h16L12 4z' },
+      { t: 'Website back up: status.acme.dev', s: 'Down for 4 min (sample)', tone: 'b-info', ic: 'M3 12h18M12 3a14 14 0 010 18' },
+      { t: 'Report exported', s: 'Weekly summary as CSV (sample)', tone: 'b-purple', ic: 'M12 4v12m0 0l-4-4m4 4l4-4M4 20h16' },
+    ];
+    $('activity').innerHTML = ACTIVITY.map((a) =&gt; `
+      &lt;div class="li"&gt;
+        &lt;span class="ic" style="background:rgba(148,170,220,0.08);color:var(--muted)"&gt;&lt;svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"&gt;&lt;path d="${a.ic}"/&gt;&lt;/svg&gt;&lt;/span&gt;
+        &lt;div&gt;&lt;div class="t"&gt;${esc(a.t)}&lt;/div&gt;&lt;div class="s"&gt;${esc(a.s)}&lt;/div&gt;&lt;/div&gt;
+        &lt;span class="badge ${a.tone}"&gt;${a.tone === 'b-ok' ? 'Passed' : a.tone === 'b-bad' ? 'Critical' : a.tone === 'b-warn' ? 'Review' : a.tone === 'b-info' ? 'Info' : 'Done'}&lt;/span&gt;
+      &lt;/div&gt;`).join('');
+
+    let kpisDone = false;
+    function animateKpis() {
+      if (kpisDone) return;
+      kpisDone = true;
+      document.querySelectorAll('#v-overview [data-count]').forEach((el) =&gt; {
+        const target = +el.dataset.count;
+        if (reduce) { el.textContent = target; return; }
+        const start = performance.now(), dur = 900;
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+          if (p &lt; 1) requestAnimationFrame(tick);
+        })(start);
+      });
+      document.querySelectorAll('#v-overview .bar i').forEach((i) =&gt; { i.style.width = i.dataset.w + '%'; });
+    }
+
+    /* ---------- WEBSITE MONITORING ---------- */
+    const SITES = [
+      { name: 'failora.dev', url: 'https://failora.dev', up: true, uptime: '99.98', rt: 182, issuer: 'Let’s Encrypt', exp: 84, base: 180 },
+      { name: 'api.acme.dev', url: 'https://api.acme.dev', up: true, uptime: '99.91', rt: 238, issuer: 'Let’s Encrypt', exp: 21, base: 230 },
+      { name: 'status.acme.dev', url: 'https://status.acme.dev', up: false, uptime: '97.42', rt: 0, issuer: 'DigiCert', exp: -3, base: 300 },
+    ];
+    function heartbeat(site, seed) {
+      let s = seed * 7919 + 13;
+      const r = () =&gt; { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+      const bars = [];
+      for (let i = 0; i &lt; 60; i++) {
+        let cls = '';
+        const roll = r();
+        if (!site.up &amp;&amp; i &gt; 52) cls = 'd';
+        else if (roll &lt; 0.04) cls = 'd';
+        else if (roll &lt; 0.08) cls = 'w';
+        bars.push(`&lt;i class="${cls}" style="height:${(40 + r() * 60).toFixed(0)}%"&gt;&lt;/i&gt;`);
+      }
+      return bars.join('');
+    }
+    $('siteCards').innerHTML = SITES.map((s, i) =&gt; `
+      &lt;article class="card"&gt;
+        &lt;div class="card-h" style="margin-bottom:10px"&gt;
+          &lt;div&gt;&lt;div style="font-weight:600"&gt;${esc(s.name)}&lt;/div&gt;&lt;div class="dim mono" style="font-size:12px"&gt;${esc(s.url)}&lt;/div&gt;&lt;/div&gt;
+          &lt;span class="badge ${s.up ? 'b-ok' : 'b-bad'}"&gt;${s.up ? 'Up' : 'Down'}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px"&gt;
+          &lt;div&gt;&lt;div class="muted" style="font-size:12px"&gt;Uptime, 30 days&lt;/div&gt;&lt;div style="font-size:24px;font-weight:700"&gt;${s.uptime}&lt;small class="muted" style="font-size:13px"&gt;%&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;div style="text-align:right"&gt;&lt;div class="muted" style="font-size:12px"&gt;Response&lt;/div&gt;&lt;div style="font-size:18px;font-weight:600"&gt;${s.up ? s.rt + ' ms' : 'no response'}&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="muted" style="font-size:12px;margin-bottom:6px"&gt;Heartbeat, last 60 checks&lt;/div&gt;
+        &lt;div class="hb" aria-hidden="true"&gt;${heartbeat(s, i + 3)}&lt;/div&gt;
+        &lt;div class="muted" style="font-size:12px;margin-top:10px"&gt;SSL: ${s.exp &gt; 0 ? `&lt;span class="badge ${s.exp &lt; 30 ? 'b-warn' : 'b-ok'}"&gt;Valid, ${s.exp} days&lt;/span&gt;` : '&lt;span class="badge b-bad"&gt;Expired&lt;/span&gt;'}&lt;/div&gt;
+      &lt;/article&gt;`).join('');
+
+    const siteSel = $('siteSel');
+    siteSel.innerHTML = SITES.map((s, i) =&gt; `&lt;option value="${i}"&gt;${esc(s.name)}&lt;/option&gt;`).join('');
+    function latencyFor(i) {
+      const base = SITES[i].base;
+      const p50 = Array.from({ length: 24 }, (_, k) =&gt; Math.round(base + Math.sin(k / 3 + i) * 18 + (k === 15 ? 60 : 0)));
+      const p95 = p50.map((v) =&gt; Math.round(v * 1.6 + 20));
+      return { p50, p95 };
+    }
+    function drawLatency() {
+      const d = latencyFor(+siteSel.value);
+      const labels = Array.from({ length: 24 }, (_, k) =&gt; (k % 6 === 0 ? k + ':00' : ''));
+      lineChart($('latencyChart'), [
+        { data: d.p95, color: '#8b5cf6' },
+        { data: d.p50, color: '#22d3ee' },
+      ], { min: 100, max: 500, labels: labels.map((l, k) =&gt; (l || '')), gradId: 'gLat' });
+    }
+    siteSel.addEventListener('change', drawLatency);
+    drawLatency();
+
+    $('sslRows').innerHTML = SITES.map((s) =&gt; `&lt;tr&gt;
+      &lt;td&gt;${esc(s.name)}&lt;/td&gt;&lt;td&gt;${esc(s.issuer)}&lt;/td&gt;
+      &lt;td class="mono"&gt;${s.exp &gt; 0 ? 'in ' + s.exp + ' days' : (-s.exp) + ' days ago'}&lt;/td&gt;
+      &lt;td&gt;${s.exp &gt; 30 ? '&lt;span class="badge b-ok"&gt;Valid&lt;/span&gt;' : s.exp &gt; 0 ? '&lt;span class="badge b-warn"&gt;Renew soon&lt;/span&gt;' : '&lt;span class="badge b-bad"&gt;Expired&lt;/span&gt;'}&lt;/td&gt;
+    &lt;/tr&gt;`).join('');
+
+    /* ---------- REPOSITORY SCANNER (simulated) ---------- */
+    const repoIn = $('repoIn');
+    const repoErr = $('repoErr');
+    const STEPS = ['Checking repository access', 'Reading file list', 'Analysing code quality', 'Checking error handling', 'Looking for missing tests', 'Building report'];
+    let scanTimer = null;
+    $('repoForm').addEventListener('submit', (e) =&gt; {
+      e.preventDefault();
+      const v = repoIn.value.trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/$/, '');
+      if (!/^[\w.-]+\/[\w.-]+$/.test(v)) {
+        repoErr.textContent = 'Use the form owner/repo, for example madhavikodale/Failora.';
+        repoIn.setAttribute('aria-invalid', 'true');
+        repoIn.focus();
+        return;
+      }
+      repoErr.textContent = '';
+      repoIn.removeAttribute('aria-invalid');
+      runScan(v);
+    });
+    function runScan(name) {
+      clearInterval(scanTimer);
+      const bar = $('scanBar'), box = $('scanSteps'), btn = $('scanBtn');
+      let i = 0;
+      btn.disabled = true;
+      box.innerHTML = STEPS.map((s) =&gt; `&lt;div&gt;&lt;i&gt;&lt;/i&gt;${esc(s)}&lt;/div&gt;`).join('');
+      bar.style.width = '0%';
+      const step = () =&gt; {
+        const items = box.querySelectorAll('div');
+        items.forEach((d, k) =&gt; { d.className = k &lt; i ? 'done' : k === i ? 'on' : ''; });
+        bar.style.width = Math.round(((i) / STEPS.length) * 100) + '%';
+        i++;
+        if (i &gt; STEPS.length) {
+          clearInterval(scanTimer);
+          bar.style.width = '100%';
+          items.forEach((d) =&gt; { d.className = 'done'; });
+          btn.disabled = false;
+          toast('Simulated scan of ' + name + ' finished. Nothing was sent to GitHub.');
+        }
+      };
+      step();
+      scanTimer = setInterval(step, reduce ? 60 : 650);
+    }
+
+    /* ---------- ISSUES &amp; FINDINGS ---------- */
+    const ISSUES = [
+      { id: 'F-101', sev: 'Critical', title: 'Retry ignores Retry-After on HTTP 429', loc: 'src/client.ts:58', status: 'Open',
+        impact: 'Under load, the client retries too early and keeps receiving 429 responses, which slows recovery.',
+        fix: 'Use the Retry-After header when it is present, and fall back to backoff otherwise.',
+        ev: '&lt;span class="c"&gt;# request log (sample)&lt;/span&gt;\n&lt;span class="r"&gt;429&lt;/span&gt; POST /respond  Retry-After: &lt;span class="k"&gt;2&lt;/span&gt;  retry #1 after &lt;span class="k"&gt;0.2 s&lt;/span&gt;\n&lt;span class="c"&gt;# src/client.ts:58&lt;/span&gt;  &lt;span class="k"&gt;await&lt;/span&gt; sleep(backoffMs)   &lt;span class="c"&gt;// header ignored&lt;/span&gt;' },
+      { id: 'F-102', sev: 'High', title: 'fetch() without a timeout', loc: 'src/client.ts:42', status: 'In progress',
+        impact: 'A stalled upstream call can hold a request open indefinitely.',
+        fix: 'Pass an AbortSignal with a timeout to every outgoing request.',
+        ev: '&lt;span class="c"&gt;// src/client.ts:42 (sample)&lt;/span&gt;\n&lt;span class="k"&gt;const&lt;/span&gt; res = &lt;span class="k"&gt;await&lt;/span&gt; fetch(url, { method: &lt;span class="g"&gt;\'POST\'&lt;/span&gt; })  &lt;span class="c"&gt;// no timeout&lt;/span&gt;' },
+      { id: 'F-103', sev: 'High', title: 'Malformed JSON has no fallback', loc: 'src/ai.ts:31', status: 'Open',
+        impact: 'A broken response body fails the whole request instead of switching to the fallback path.',
+        fix: 'Catch the parse error and call the fallback model, then re-run the malformed scenario.',
+        ev: '&lt;span class="c"&gt;# recovery test (sample)&lt;/span&gt;\nmode=malformed   -&amp;gt;  &lt;span class="r"&gt;JSON.parse failed&lt;/span&gt;\n&lt;span class="c"&gt;# src/ai.ts:31&lt;/span&gt;  &lt;span class="k"&gt;catch&lt;/span&gt; (e) { &lt;span class="k"&gt;throw&lt;/span&gt; e }' },
+      { id: 'F-104', sev: 'Medium', title: 'Retry logic not covered by tests', loc: 'src/client.ts', status: 'Open',
+        impact: 'Changes to retry behaviour can ship without anyone noticing.',
+        fix: 'Add a regression test that replays the 429 scenario on every change.',
+        ev: '&lt;span class="c"&gt;# coverage (sample)&lt;/span&gt;\nsrc/client.ts   &lt;span class="r"&gt;retry branch: 0 tests&lt;/span&gt;' },
+      { id: 'F-105', sev: 'Medium', title: 'Health endpoint is cacheable', loc: '/health', status: 'Fixed',
+        impact: 'Intermediaries may serve stale health responses and hide real outages.',
+        fix: 'Send Cache-Control: no-store on the health route.',
+        ev: '&lt;span class="c"&gt;# header check (sample)&lt;/span&gt;\nCache-Control: &lt;span class="g"&gt;no-store&lt;/span&gt;' },
+      { id: 'F-106', sev: 'Low', title: 'Verbose error message in logs', loc: 'src/ai.ts:44', status: 'Open',
+        impact: 'Error text may include request details that should not be logged.',
+        fix: 'Log the error code and a request id instead of the full payload.',
+        ev: '&lt;span class="c"&gt;# log line (sample)&lt;/span&gt;\nlogger.error(&lt;span class="k"&gt;JSON&lt;/span&gt;.stringify(payload))' },
+    ];
+    const SEVS = ['All', 'Critical', 'High', 'Medium', 'Low'];
+    let sevF = 'All', statF = 'ALL', selIssue = ISSUES[0].id;
+    $('sevChips').innerHTML = SEVS.map((s) =&gt; `&lt;button class="chip" type="button" data-sev="${s}" aria-pressed="${s === 'All'}"&gt;${s}&lt;/button&gt;`).join('');
+    function renderIssues() {
+      const list = ISSUES.filter((x) =&gt; (sevF === 'All' || x.sev === sevF) &amp;&amp; (statF === 'ALL' || x.status === statF));
+      $('issueRows').innerHTML = list.length ? list.map((x) =&gt; `
+        &lt;tr class="click ${x.id === selIssue ? 'sel' : ''}" data-id="${x.id}" tabindex="0" aria-label="${esc(x.sev + ': ' + x.title)}"&gt;
+          &lt;td&gt;&lt;span class="sev ${x.sev.toLowerCase()}"&gt;${x.sev.toUpperCase()}&lt;/span&gt;&lt;/td&gt;
+          &lt;td&gt;${esc(x.title)}&lt;/td&gt;
+          &lt;td class="mono"&gt;${esc(x.loc)}&lt;/td&gt;
+          &lt;td&gt;${esc(x.status)}&lt;/td&gt;
+        &lt;/tr&gt;`).join('') : '&lt;tr class="empty"&gt;&lt;td colspan="4"&gt;No issues match these filters.&lt;/td&gt;&lt;/tr&gt;';
+      $('issueCount').textContent = `${list.length} of ${ISSUES.length} shown`;
+      renderDetail();
+    }
+    function renderDetail() {
+      const x = ISSUES.find((i) =&gt; i.id === selIssue);
+      if (!x) { $('issueDetail').innerHTML = '&lt;p class="muted"&gt;Pick an issue to see details.&lt;/p&gt;'; return; }
+      $('issueDetail').innerHTML = `
+        &lt;div class="card-h" style="margin-bottom:6px"&gt;
+          &lt;div&gt;&lt;div class="title"&gt;${esc(x.title)}&lt;/div&gt;&lt;div class="dim mono" style="font-size:12px"&gt;${esc(x.id)} · ${esc(x.loc)}&lt;/div&gt;&lt;/div&gt;
+          &lt;span class="sev ${x.sev.toLowerCase()}"&gt;${x.sev.toUpperCase()}&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;h4&gt;Issue&lt;/h4&gt;&lt;p&gt;${esc(x.title)}.&lt;/p&gt;
+        &lt;h4&gt;Evidence&lt;/h4&gt;&lt;div class="code"&gt;${x.ev}&lt;/div&gt;
+        &lt;h4&gt;Impact&lt;/h4&gt;&lt;p&gt;${esc(x.impact)}&lt;/p&gt;
+        &lt;h4&gt;Recommended fix&lt;/h4&gt;&lt;p&gt;${esc(x.fix)}&lt;/p&gt;
+        &lt;h4&gt;Status&lt;/h4&gt;
+        &lt;div class="field" style="max-width:240px"&gt;
+          &lt;label for="stSel"&gt;Finding status&lt;/label&gt;
+          &lt;select id="stSel"&gt;${['Open', 'In progress', 'Fixed'].map((s) =&gt; `&lt;option ${s === x.status ? 'selected' : ''}&gt;${s}&lt;/option&gt;`).join('')}&lt;/select&gt;
+        &lt;/div&gt;`;
+      $('stSel').addEventListener('change', (e) =&gt; {
+        x.status = e.target.value;
+        toast(x.id + ' status set to ' + x.status + ' (kept in this page only).');
+        renderIssues();
+      });
+    }
+    $('sevChips').addEventListener('click', (e) =&gt; {
+      const b = e.target.closest('[data-sev]');
+      if (!b) return;
+      sevF = b.dataset.sev;
+      $('sevChips').querySelectorAll('.chip').forEach((c) =&gt; c.setAttribute('aria-pressed', String(c === b)));
+      renderIssues();
+    });
+    $('statusSel').addEventListener('change', (e) =&gt; { statF = e.target.value; renderIssues(); });
+    function pick(e) {
+      const tr = e.target.closest('tr[data-id]');
+      if (!tr) return;
+      selIssue = tr.dataset.id;
+      renderIssues();
+      if (e.type === 'keydown') $('issueDetail').focus();
+    }
+    $('issueRows').addEventListener('click', pick);
+    $('issueRows').addEventListener('keydown', (e) =&gt; { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e); } });
+    renderIssues();
+
+    /* ---------- AI RELIABILITY TESTING (simulated) ---------- */
+    const SCEN = [
+      { id: 'timeout', name: 'Timeout then retry', mode: 'slow, delay 5000', retry: 'Yes', fb: 'n/a', ok: true, pct: 96 },
+      { id: '429', name: 'HTTP 429 with Retry-After', mode: '429', retry: 'Yes', fb: 'n/a', ok: false, pct: 78 },
+      { id: '500', name: 'HTTP 500 burst', mode: '500, 20 requests', retry: 'Yes', fb: 'Yes', ok: true, pct: 92 },
+      { id: 'mal', name: 'Malformed JSON fallback', mode: 'malformed', retry: 'n/a', fb: 'No', ok: false, pct: 61 },
+    ];
+    const selected = new Set(SCEN.map((s) =&gt; s.id));
+    $('scenarioList').innerHTML = SCEN.map((s) =&gt; `
+      &lt;div class="li" style="grid-template-columns:44px 1fr auto"&gt;
+        &lt;label class="switch"&gt;&lt;span class="sr-only"&gt;Include ${esc(s.name)}&lt;/span&gt;&lt;input type="checkbox" data-scen="${s.id}" checked /&gt;&lt;span&gt;&lt;/span&gt;&lt;/label&gt;
+        &lt;div&gt;&lt;div class="t"&gt;${esc(s.name)}&lt;/div&gt;&lt;div class="s mono"&gt;${esc(s.mode)}&lt;/div&gt;&lt;/div&gt;
+        &lt;span class="badge ${s.ok ? 'b-ok' : 'b-warn'}" data-badge="${s.id}"&gt;${s.ok ? 'Last: passed' : 'Last: gap'}&lt;/span&gt;
+      &lt;/div&gt;`).join('');
+    document.querySelectorAll('[data-scen]').forEach((c) =&gt; c.addEventListener('change', () =&gt; {
+      c.checked ? selected.add(c.dataset.scen) : selected.delete(c.dataset.scen);
+    }));
+    function renderTestRows() {
+      $('testRows').innerHTML = SCEN.map((s) =&gt; `&lt;tr&gt;
+        &lt;td&gt;${esc(s.name)}&lt;/td&gt;&lt;td class="mono"&gt;${esc(s.mode)}&lt;/td&gt;&lt;td&gt;${esc(s.retry)}&lt;/td&gt;&lt;td&gt;${esc(s.fb)}&lt;/td&gt;
+        &lt;td&gt;&lt;span class="badge ${s.ok ? 'b-ok' : 'b-warn'}"&gt;${s.ok ? 'Recovered' : 'Gap found'}&lt;/span&gt;&lt;/td&gt;&lt;/tr&gt;`).join('');
+    }
+    renderTestRows();
+    barChart($('recoveryBars'), SCEN.map((s) =&gt; ({ label: s.id === 'mal' ? 'malformed' : s.id, value: s.pct })), {
+      max: 100, unit: '%', colors: SCEN.map((s) =&gt; (s.ok ? 'url(#barGrad)' : '#fb923c')),
+    });
+    $('runTests').addEventListener('click', () =&gt; {
+      const ids = [...selected];
+      if (!ids.length) { $('testMsg').textContent = 'Select at least one scenario.'; return; }
+      const bar = $('testBar'), msg = $('testMsg');
+      let k = 0;
+      bar.style.width = '0%';
+      msg.textContent = 'Running ' + ids.length + ' scenario(s), simulated...';
+      const tick = () =&gt; {
+        k++;
+        bar.style.width = Math.round((k / ids.length) * 100) + '%';
+        if (k &lt; ids.length) setTimeout(tick, reduce ? 0 : 700);
+        else {
+          msg.textContent = 'Simulated run finished. Results below are still the sample run.';
+          toast('Simulated run finished. Nothing was sent to your AI service.');
+        }
+      };
+      setTimeout(tick, reduce ? 0 : 500);
+    });
+
+    /* ---------- REPORTS &amp; HISTORY ---------- */
+    const HIST = [
+      { date: '2026-10-29', target: 'api.acme.dev', type: 'Website', issues: 4, score: 88, res: 'Review' },
+      { date: '2026-10-28', target: 'madhavikodale/Failora', type: 'Repository', issues: 12, score: 82, res: 'Review' },
+      { date: '2026-10-27', target: 'failora.dev', type: 'Website', issues: 0, score: 97, res: 'Healthy' },
+      { date: '2026-10-25', target: 'mock-ai /respond', type: 'Reliability', issues: 2, score: 90, res: 'Healthy' },
+      { date: '2026-10-22', target: 'status.acme.dev', type: 'Website', issues: 5, score: 61, res: 'Critical' },
+      { date: '2026-10-20', target: 'api /runs', type: 'Reliability', issues: 1, score: 93, res: 'Healthy' },
+    ];
+    function renderHist() {
+      $('histRows').innerHTML = HIST.map((h) =&gt; `&lt;tr&gt;
+        &lt;td class="mono"&gt;${esc(h.date)}&lt;/td&gt;&lt;td&gt;${esc(h.target)}&lt;/td&gt;&lt;td&gt;${esc(h.type)}&lt;/td&gt;
+        &lt;td class="mono"&gt;${h.issues}&lt;/td&gt;&lt;td class="mono"&gt;${h.score}&lt;/td&gt;
+        &lt;td&gt;&lt;span class="badge ${h.res === 'Healthy' ? 'b-ok' : h.res === 'Critical' ? 'b-bad' : 'b-warn'}"&gt;${h.res}&lt;/span&gt;&lt;/td&gt;&lt;/tr&gt;`).join('');
+      $('histCount').textContent = HIST.length + ' scans (sample)';
+    }
+    renderHist();
+    barChart($('perfBars'), HIST.slice().reverse().map((h) =&gt; ({ label: h.date.slice(5), value: h.score })), { max: 100 });
+    $('failLog').innerHTML = [
+      { t: '429 without backoff', s: 'api.acme.dev · 22 Oct 14:02 (sample)', tone: 'b-bad' },
+      { t: 'Timeout after 5 s', s: 'mock-ai /respond · 25 Oct 09:40 (sample)', tone: 'b-warn' },
+      { t: 'Malformed JSON', s: 'api /runs · 20 Oct 18:11 (sample)', tone: 'b-warn' },
+    ].map((f) =&gt; `&lt;div class="li"&gt;&lt;span class="ic" style="background:rgba(148,170,220,0.08);color:var(--muted)"&gt;&lt;/span&gt;&lt;div&gt;&lt;div class="t"&gt;${esc(f.t)}&lt;/div&gt;&lt;div class="s"&gt;${esc(f.s)}&lt;/div&gt;&lt;/div&gt;&lt;span class="badge ${f.tone}"&gt;Logged&lt;/span&gt;&lt;/div&gt;`).join('');
+
+    function csvEscape(v) { const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+    $('exportCsv').addEventListener('click', () =&gt; {
+      const head = ['date', 'target', 'type', 'issues', 'score', 'result'];
+      const rows = HIST.map((h) =&gt; [h.date, h.target, h.type, h.issues, h.score, h.res]);
+      const csv = [head, ...rows].map((r) =&gt; r.map(csvEscape).join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'failora-scan-history-sample.csv';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() =&gt; { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      toast('CSV downloaded. It contains sample data.');
+    });
+    $('exportPdf').addEventListener('click', () =&gt; toast('PDF export is not part of this release. Use CSV for now.'));
+
+    /* ---------- SETTINGS ---------- */
+    $('profileForm').addEventListener('submit', (e) =&gt; {
+      e.preventDefault();
+      toast('Profile saved in this page only (sample).');
+    });
+
+    /* ---------- Global search: jump to the right section ---------- */
+    const SEARCH_MAP = [
+      { k: 'overview projects health', v: 'overview' },
+      { k: 'website uptime heartbeat ssl latency', v: 'websites' },
+      { k: 'repo repository github scan', v: 'repos' },
+      { k: 'issue finding critical bug', v: 'issues' },
+      { k: 'test timeout retry fallback scenario ai', v: 'testing' },
+      { k: 'report history export csv pdf', v: 'reports' },
+      { k: 'settings integration notification team profile', v: 'settings' },
+    ];
+    $('globalSearch').addEventListener('keydown', (e) =&gt; {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) return;
+      const hit = SEARCH_MAP.find((m) =&gt; m.k.split(' ').some((w) =&gt; q.includes(w) || w.startsWith(q)));
+      if (hit) { location.hash = hit.v; e.target.value = ''; }
+      else toast('No section matches "' + q + '".');
+    });
+    addEventListener('keydown', (e) =&gt; {
+      if (e.key === '/' &amp;&amp; !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+        e.preventDefault(); $('globalSearch').focus();
+      }
+    });
+
+    /* ---------- Back to landing (works when embedded in the same file) ---------- */
+    function goLanding(to) {
+      try { parent.postMessage({ type: 'failora-landing', to: to || '' }, '*'); } catch (e) {}
+    }
+    document.addEventListener('click', (e) =&gt; {
+      const a = e.target.closest('a[href^="terminal.html"]');
+      if (!a) return;
+      e.preventDefault();
+      goLanding((a.getAttribute('href').split('#')[1]) || '');
+    });
+    addEventListener('keydown', (e) =&gt; {
+      if (e.key === 'Escape' &amp;&amp; !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) goLanding('');
+    });
+
+    /* ---------- Start ---------- */
+    show(location.hash.slice(1) || 'overview', false);
+    if (location.hash.slice(1) === '' ) { animateKpis(); }
+    requestAnimationFrame(() =&gt; {
+      if (!$('v-overview').hidden) animateKpis();
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</textarea>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot">
+        <div>
+          <div class="brand"><span class="pr">$</span> failora</div>
+          <p style="margin-top:10px">Find the failure. Prove the recovery.</p>
+        </div>
+        <div>
+          <h5>product</h5>
+          <a href="#features">features</a>
+          <a href="#how">how-it-works</a>
+          <a href="#report">sample report</a>
+          <a href="#quickstart">quickstart</a>
+        </div>
+        <div>
+          <h5>resources</h5>
+          <a href="#docs">documentation</a>
+          <a href="https://github.com/madhavikodale/Failora" target="_blank" rel="noopener">github</a>
+        </div>
+        <div>
+          <h5>company</h5>
+          <a href="mailto:hello@failora.dev">contact</a>
+          <a href="#privacy">privacy</a>
+          <a href="#docs">terms</a>
+        </div>
+      </div>
+      <div class="foot-end">
+        <span>&copy; 2026 Failora. All rights reserved.</span>
+        <span>built for developers who test their failure paths</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    /* ---------- Theme (light / dark), remembered per browser ---------- */
+    const themeBtn = document.getElementById('themeBtn');
+    function applyTheme(t) {
+      if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.removeAttribute('data-theme');
+      const light = t === 'light';
+      themeBtn.setAttribute('aria-pressed', String(light));
+      themeBtn.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+      themeBtn.textContent = light ? 'dark' : 'light';
+    }
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('failora_theme'); } catch (e) {}
+    applyTheme(savedTheme === 'light' ? 'light' : 'dark');
+    themeBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem('failora_theme', next); } catch (e) {}
+    });
+
+    /* ---------- Nav ---------- */
+    const nav = document.getElementById('nav');
+    const navLinks = [...document.querySelectorAll('[data-nav]')];
+    const navTargets = navLinks.map(a => document.querySelector(a.getAttribute('href')));
+    const menuBtn = document.getElementById('menuBtn');
+    const mobile = document.getElementById('mobile');
+    function setMenu(open) {
+      mobile.classList.toggle('open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.textContent = open ? 'close' : 'menu';
+    }
+    menuBtn.addEventListener('click', () => setMenu(!mobile.classList.contains('open')));
+    mobile.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+
+    function onScroll() {
+      nav.classList.toggle('scrolled', scrollY > 20);
+      let active = -1;
+      navTargets.forEach((t, i) => { if (t && t.getBoundingClientRect().top < innerHeight * 0.4) active = i; });
+      navLinks.forEach((a, i) => {
+        const on = i === active;
+        a.classList.toggle('active', on);
+        if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+      });
+    }
+    addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    /* ---------- Copy buttons ---------- */
+    document.querySelectorAll('.has-copy').forEach((block) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', 'Copy commands');
+      btn.addEventListener('click', async () => {
+        const text = block.dataset.copy || block.textContent;
+        let ok = false;
+        try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { ok = document.execCommand('copy'); } catch (err) {}
+          ta.remove();
+        }
+        btn.textContent = ok ? 'copied' : 'failed';
+        btn.dataset.state = ok ? 'done' : '';
+        setTimeout(() => { btn.textContent = 'copy'; btn.dataset.state = ''; }, 1600);
+      });
+      block.appendChild(btn);
+    });
+
+    /* ---------- Reveal ---------- */
+    const revealIO = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('in');
+        revealIO.unobserve(e.target);
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => { if (!el.classList.contains('in')) revealIO.observe(el); });
+
+    /* ---------- Hero title: character reveal ---------- */
+    (function () {
+      const t = document.getElementById('heroTitle');
+      if (reduce) return;
+      const textNodes = [];
+      (function walk(node) {
+        [...node.childNodes].forEach((n) => {
+          if (n.nodeType === 3) textNodes.push(n);
+          else if (n.nodeType === 1 && n.tagName !== 'BR') walk(n);
+        });
+      })(t);
+      let k = 0;
+      textNodes.forEach((n) => {
+        if (!n.textContent.trim()) return;
+        const frag = document.createDocumentFragment();
+        [...n.textContent].forEach((ch) => {
+          const s = document.createElement('span');
+          s.textContent = ch;
+          s.style.opacity = '0';
+          s.style.transition = 'opacity 0.12s linear';
+          s.dataset.k = k++;
+          frag.appendChild(s);
+        });
+        n.replaceWith(frag);
+      });
+      const chars = [...t.querySelectorAll('span[data-k]')];
+      chars.forEach((c, i) => setTimeout(() => { c.style.opacity = '1'; }, 300 + i * 22));
+      const sub = document.querySelector('.hero-sub');
+      sub.style.opacity = '0';
+      setTimeout(() => { sub.style.transition = 'opacity 0.8s'; sub.style.opacity = '1'; }, 300 + chars.length * 22 + 200);
+    })();
+
+    /* ---------- Scan input: validation, placeholder rotation, simulated output ---------- */
+    const form = document.getElementById('scanForm');
+    const input = document.getElementById('target');
+    const cmdBox = document.getElementById('cmdBox');
+    const formErr = document.getElementById('formErr');
+    const scanOut = document.getElementById('scanOut');
+    const scanLines = document.getElementById('scanLines');
+    let scanTimers = [];
+
+    const placeholders = ['https://your-site.com', 'github.com/owner/repo', 'https://api.example.com/respond'];
+    let phIdx = 0;
+    if (!reduce) {
+      setInterval(() => {
+        if (document.activeElement === input || input.value) return;
+        phIdx = (phIdx + 1) % placeholders.length;
+        input.placeholder = placeholders[phIdx];
+      }, 2800);
+    }
+
+    function validTarget(v) {
+      const s = v.trim();
+      if (!s) return false;
+      return /^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(s)
+          || /^(https?:\/\/)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i.test(s);
+    }
+    function setErr(msg) {
+      formErr.textContent = msg;
+      cmdBox.classList.toggle('invalid', !!msg);
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    }
+
+    function runScan(target) {
+      scanTimers.forEach(clearTimeout); scanTimers = [];
+      scanLines.querySelectorAll('.l').forEach(n => n.remove());
+      scanOut.classList.add('show');
+      const script = [
+        `<span class="p">$</span> failora scan ${esc(target)}`,
+        `<span class="d">[ .. ]</span> resolving target`,
+        `<span class="ok">[ OK ]</span> target resolved`,
+        `<span class="d">[ .. ]</span> checking availability and response time`,
+        `<span class="ok">[ OK ]</span> 200 OK, 238 ms (simulated)`,
+        `<span class="d">[ .. ]</span> reviewing headers and configuration`,
+        `<span class="warn">[WARN]</span> Content-Security-Policy not set (simulated)`,
+        `<span class="d">[ .. ]</span> running sample recovery checks`,
+        `<span class="ok">[ OK ]</span> 3 scenarios complete (simulated)`,
+        `<span class="info">[ >> ]</span> report ready, opening sample findings below`,
+      ];
+      script.forEach((html, i) => {
+        const t = setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'l shown';
+          div.innerHTML = html;
+          scanLines.appendChild(div);
+          if (i === script.length - 1) {
+            document.getElementById('report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+            openFinding(0, true);
+          }
+        }, reduce ? 0 : i * 520);
+        scanTimers.push(t);
+      });
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validTarget(input.value)) {
+        setErr('invalid target. Use a website URL or a GitHub repo, e.g. github.com/owner/repo');
+        input.focus();
+        return;
+      }
+      setErr('');
+      runScan(input.value.trim());
+    });
+    input.addEventListener('input', () => { if (formErr.textContent) setErr(''); });
+
+    document.getElementById('sampleBtn').addEventListener('click', () => {
+      document.getElementById('report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+      openFinding(0, true);
+    });
+
+    /* ---------- Command palette (Ctrl/Cmd+K) and "/" shortcut ---------- */
+    const palBack = document.getElementById('palBack');
+    const palInput = document.getElementById('palInput');
+    const palList = document.getElementById('palList');
+    const palBtn = document.getElementById('palBtn');
+    const palItems = [
+      { label: 'Product dashboard', href: '#product', hint: 'product' },
+      { label: 'Features', href: '#features', hint: 'features' },
+      { label: 'How it works', href: '#how', hint: 'pipeline' },
+      { label: 'Quickstart commands', href: '#quickstart', hint: 'run it' },
+      { label: 'Sample report', href: '#report', hint: 'findings' },
+      { label: 'Status: what is available', href: '#status', hint: 'status' },
+      { label: 'Privacy', href: '#privacy', hint: 'privacy' },
+      { label: 'FAQ', href: '#docs', hint: 'help' },
+      { label: 'Scan a target', href: '#top', hint: 'scan' },
+    ];
+    let palSel = 0, palFiltered = palItems, lastFocus = null;
+
+    function renderPal() {
+      const q = palInput.value.trim().toLowerCase();
+      palFiltered = palItems.filter(it => !q || it.label.toLowerCase().includes(q) || it.hint.includes(q));
+      if (palSel >= palFiltered.length) palSel = 0;
+      palList.innerHTML = palFiltered.map((it, i) => `
+        <li role="option" aria-selected="${i === palSel}"><button type="button" data-i="${i}" aria-selected="${i === palSel}"><span>${esc(it.label)}</span><span>${esc(it.hint)}</span></button></li>`).join('')
+        || '<li class="m" style="padding:10px 12px;color:var(--dim)">no matches</li>';
+    }
+    function openPal() {
+      lastFocus = document.activeElement;
+      palBack.hidden = false;
+      palInput.value = '';
+      palSel = 0;
+      renderPal();
+      palInput.focus();
+    }
+    function closePal() {
+      palBack.hidden = true;
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    function goPal(i) {
+      const it = palFiltered[i];
+      if (!it) return;
+      closePal();
+      const t = document.querySelector(it.href);
+      if (t) t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+    }
+    palBtn.addEventListener('click', openPal);
+    palInput.addEventListener('input', () => { palSel = 0; renderPal(); });
+    palList.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-i]');
+      if (b) goPal(+b.dataset.i);
+    });
+    palBack.addEventListener('click', (e) => { if (e.target === palBack) closePal(); });
+    palInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); palSel = (palSel + 1) % Math.max(1, palFiltered.length); renderPal(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); palSel = (palSel - 1 + palFiltered.length) % Math.max(1, palFiltered.length); renderPal(); }
+      else if (e.key === 'Enter') { e.preventDefault(); goPal(palSel); }
+      else if (e.key === 'Escape') { e.preventDefault(); closePal(); }
+      else if (e.key === 'Tab') { e.preventDefault(); }
+    });
+
+    addEventListener('keydown', (e) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && !document.body.classList.contains('console-open')) {
+        e.preventDefault();
+        palBack.hidden ? openPal() : closePal();
+      } else if (e.key === '/' && !typing && palBack.hidden && !document.body.classList.contains('console-open')) {
+        e.preventDefault();
+        input.focus();
+      } else if (e.key === 'Escape') {
+        if (!palBack.hidden) closePal();
+        else if (mobile.classList.contains('open')) { setMenu(false); menuBtn.focus(); }
+      }
+    });
+
+    /* ---------- How it works: stages light up in sequence ---------- */
+    (function () {
+      const stages = [...document.querySelectorAll('[data-stage]')];
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          io.unobserve(e.target);
+          stages.forEach((s, i) => setTimeout(() => {
+            s.classList.add('on');
+            s.querySelector('.state').textContent = 'done';
+          }, reduce ? 0 : i * 450));
+        });
+      }, { threshold: 0.4 });
+      io.observe(document.getElementById('pipe'));
+    })();
+
+    /* ---------- Dashboard: sparklines, severity bars, counters ---------- */
+    (function () {
+      const blocks = '▁▂▃▄▅▆▇█';
+      const hb = document.getElementById('heartbeat');
+      let hbHTML = '';
+      for (let i = 0; i < 60; i++) {
+        const bad = i === 14 || i === 41 || i === 52;
+        if (bad) hbHTML += '<span class="f">▁</span>';
+        else hbHTML += blocks[Math.min(7, 3 + Math.round(Math.abs(Math.sin(i * 0.9)) * 3) + (i % 3 === 0 ? 1 : 0))];
+      }
+      hb.innerHTML = hbHTML;
+
+      const lat = document.getElementById('latency');
+      const latVals = [];
+      for (let x = 0; x < 48; x++) latVals.push(Math.round(220 + Math.sin(x / 4) * 26 + Math.sin(x / 1.7) * 9 + (x > 30 && x < 34 ? 40 : 0)));
+      const min = Math.min(...latVals), max = Math.max(...latVals);
+      lat.innerHTML = latVals.map(v => blocks[Math.min(7, Math.floor((v - min) / (max - min + 1) * 8))]).join('');
+
+      const rows = [
+        { label: 'critical', n: 1, w: 2, cls: 'r' },
+        { label: 'high', n: 3, w: 6, cls: 'o' },
+        { label: 'medium', n: 5, w: 10, cls: 'y' },
+        { label: 'low', n: 8, w: 16, cls: 'b' },
+      ];
+      document.getElementById('sevBars').innerHTML = rows
+        .map(r => `<b>${r.label.padEnd(9, ' ')}</b> <span class="bar ${r.cls}">${'█'.repeat(r.w)}</span>  ${r.n}`).join('\n');
+    })();
+
+    const countIO = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = parseFloat(el.dataset.count);
+        const dec = +(el.dataset.dec || 0);
+        if (reduce) { el.textContent = target.toFixed(dec); countIO.unobserve(el); return; }
+        const start = performance.now(), dur = 1100;
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dec);
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+        countIO.unobserve(el);
+      });
+    }, { threshold: 0.6 });
+    document.querySelectorAll('[data-count]').forEach(el => countIO.observe(el));
+
+    /* ---------- Sample report: expandable findings + arrow keys ---------- */
+    const findings = [
+      {
+        title: 'Retry ignores Retry-After on HTTP 429',
+        sev: 'high', sevLabel: 'HIGH', meta: 'api/respond · src/client.ts:58',
+        impact: 'Under load, the client retries too early and keeps receiving 429 responses, which slows recovery.',
+        evidence: `<span class="c"># request log (sample)</span>
+<span class="r">429</span> POST /respond  Retry-After: <span class="k">2</span>  retry #1 after <span class="k">0.2 s</span>
+<span class="r">429</span> POST /respond  Retry-After: <span class="k">2</span>  retry #2 after <span class="k">0.2 s</span>
+<span class="c"># src/client.ts:58</span>  <span class="k">await</span> sleep(backoffMs)   <span class="c">// header ignored</span>`,
+        steps: [
+          'Start the mock service and set /respond?mode=429.',
+          'Send a POST request through the client.',
+          'Watch the retry timing in the request log.',
+          'Compare the delay with the Retry-After header.'
+        ],
+        fix: `<span class="c">// use the header value when present</span>
+<span class="k">const</span> wait = <span class="k">Number</span>(res.headers.get(<span class="g">'retry-after'</span>)) * 1000 || backoffMs;
+<span class="k">await</span> sleep(wait);`,
+        verdict: 'v', verdictLabel: 'VERIFIED', verifyText: 'Sample run: 3 of 3 retries waited for Retry-After.'
+      },
+      {
+        title: 'No fallback on malformed JSON',
+        sev: 'med', sevLabel: 'MEDIUM', meta: 'api/respond · src/ai.ts:31',
+        impact: 'A broken response body fails the whole request instead of switching to the fallback path.',
+        evidence: `<span class="c"># recovery test (sample)</span>
+mode=malformed   -&gt;  <span class="r">JSON.parse failed</span>
+fallback path    -&gt;  <span class="r">not triggered</span>
+<span class="c"># src/ai.ts:31</span>  <span class="k">catch</span> (e) { <span class="k">throw</span> e }`,
+        steps: [
+          'Set /respond?mode=malformed on the mock service.',
+          'Run the malformed-response scenario.',
+          'Check whether the fallback handler runs.',
+          'Confirm the request fails with no recovery.'
+        ],
+        fix: `<span class="k">catch</span> (e) {
+  <span class="k">return</span> <span class="k">await</span> fallbackModel(prompt); <span class="c">// recover</span>
+}`,
+        verdict: 'p', verdictLabel: 'PENDING RE-TEST', verifyText: 'Fix suggested. Re-run the scenario to verify recovery.'
+      },
+      {
+        title: 'Missing Cache-Control on /health',
+        sev: 'low', sevLabel: 'LOW', meta: 'website (planned check)',
+        impact: 'Health checks may return cached responses from intermediaries, which can hide real outages.',
+        evidence: `<span class="c"># header check (sample)</span>
+GET /health   200 OK
+Cache-Control: <span class="r">(missing)</span>`,
+        steps: [
+          'Request /health from a clean client.',
+          'Inspect the response headers.',
+          'Confirm Cache-Control is absent.'
+        ],
+        fix: `<span class="c"># add to the health route</span>
+Cache-Control: <span class="g">no-store</span>`,
+        verdict: 'q', verdictLabel: 'PARTIALLY VERIFIED', verifyText: 'Header confirmed missing. Fix not re-tested yet.'
+      }
+    ];
+
+    const wrapF = document.getElementById('findings');
+    wrapF.innerHTML = findings.map((f, i) => `
+      <div class="f-item">
+        <button class="f-btn" type="button" id="fb-${i}" aria-controls="fp-${i}" aria-expanded="false" data-i="${i}">
+          <span class="sev ${f.sev}">${f.sevLabel}</span>
+          <span>
+            <span class="f-title" style="display:block">${esc(f.title)}</span>
+            <span class="f-meta" style="display:block">${esc(f.meta)}</span>
+          </span>
+          <span class="f-toggle" aria-hidden="true">&#9656;</span>
+        </button>
+        <div class="f-panel" id="fp-${i}" role="region" aria-labelledby="fb-${i}">
+          <h4>impact</h4><p>${esc(f.impact)}</p>
+          <h4>evidence</h4><div class="code">${f.evidence}</div>
+          <h4>steps to reproduce</h4><ol>${f.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+          <h4>recommended fix</h4><div class="code has-copy" data-copy="${esc(f.fix.replace(/<[^>]+>/g, ''))}">${f.fix}</div>
+          <h4>verification status</h4>
+          <span class="verdict ${f.verdict}">${f.verdictLabel}</span>
+          <p style="margin-top:6px">${esc(f.verifyText)}</p>
+        </div>
+      </div>`).join('');
+
+    // Attach copy buttons to fix blocks rendered above
+    wrapF.querySelectorAll('.has-copy').forEach((block) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy';
+      btn.textContent = 'copy';
+      btn.addEventListener('click', async () => {
+        let ok = false;
+        try { await navigator.clipboard.writeText(block.dataset.copy); ok = true; } catch (e) {}
+        btn.textContent = ok ? 'copied' : 'failed';
+        btn.dataset.state = ok ? 'done' : '';
+        setTimeout(() => { btn.textContent = 'copy'; btn.dataset.state = ''; }, 1600);
+      });
+      block.appendChild(btn);
+    });
+
+    function setFinding(i, open) {
+      document.getElementById('fb-' + i).setAttribute('aria-expanded', String(open));
+      document.getElementById('fp-' + i).classList.toggle('open', open);
+    }
+    function openFinding(i, focus) {
+      setFinding(i, true);
+      if (focus) document.getElementById('fb-' + i).focus({ preventScroll: true });
+    }
+    wrapF.addEventListener('click', (e) => {
+      const btn = e.target.closest('.f-btn');
+      if (!btn) return;
+      const i = +btn.dataset.i;
+      setFinding(i, btn.getAttribute('aria-expanded') !== 'true');
+    });
+    wrapF.addEventListener('keydown', (e) => {
+      const btns = [...wrapF.querySelectorAll('.f-btn')];
+      const idx = btns.indexOf(document.activeElement);
+      if (idx < 0) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); btns[(idx + 1) % btns.length].focus(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); btns[(idx - 1 + btns.length) % btns.length].focus(); }
+    });
+
+    /* ---------- Console: opened by every Get Started button ---------- */
+    (function () {
+      const conBack = document.getElementById('conBack');
+      const conOut = document.getElementById('conOut');
+      const conInput = document.getElementById('conInput');
+      const conForm = document.getElementById('conForm');
+      const conClose = document.getElementById('conClose');
+      const conQs = document.getElementById('conQs');
+      let returnTo = null;
+
+      const CMDS = {
+        help: ['commands:', '  start    local setup steps (from the README)', '  health   simulated GET /health', '  repo     GitHub repository link', '  clear    clear this console'],
+        start: ['$ git clone https://github.com/madhavikodale/Failora.git', '$ cd Failora', '$ npm install', '$ npm run mock-ai', '$ npm run start --workspace=packages/api'],
+        health: ['GET http://127.0.0.1:4200/health', '200 OK  {"status":"ok"}   (simulated, nothing was sent)'],
+        repo: ['https://github.com/madhavikodale/Failora'],
+      };
+
+      function say(text, cls) {
+        const d = document.createElement('div');
+        d.className = 'ln' + (cls ? ' ' + cls : '');
+        d.textContent = text;
+        conOut.appendChild(d);
+        conOut.scrollTop = conOut.scrollHeight;
+      }
+      function greet() {
+        say('failora console v0.1.0 (simulated)', 'p');
+        say('type "help" to see commands. nothing you type is sent anywhere.', 'd');
+      }
+      function run(raw) {
+        const cmd = raw.trim();
+        if (!cmd) return;
+        const key = cmd.toLowerCase();
+        if (key === 'clear') { conOut.textContent = ''; greet(); return; }
+        say('$ ' + cmd, 'd');
+        if (CMDS[key]) { CMDS[key].forEach(line => say(line)); return; }
+        say('command not found: ' + cmd + '. type "help".', 'bad');
+      }
+      function open(trigger) {
+        returnTo = trigger || document.activeElement;
+        conBack.hidden = false;
+        document.body.classList.add('console-open');
+        if (!conOut.childElementCount) greet();
+        setTimeout(() => conInput.focus(), 0);
+      }
+      function close() {
+        conBack.hidden = true;
+        document.body.classList.remove('console-open');
+        if (returnTo && returnTo.focus) returnTo.focus();
+      }
+
+      document.querySelectorAll('[data-console-open]').forEach((b) => {
+        b.addEventListener('click', () => open(b));
+      });
+      conClose.addEventListener('click', close);
+      conQs.addEventListener('click', close);
+      conBack.addEventListener('click', (e) => { if (e.target === conBack) close(); });
+      conBack.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+        if (e.key === 'Tab') {
+          const f = [...conBack.querySelectorAll('button, input, a[href]')];
+          const first = f[0], last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+      conForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        run(conInput.value);
+        conInput.value = '';
+      });
+    })();
+
+    /* ---------- Console overlay: open, close, and return to a section ---------- */
+    (function () {
+      const cx = document.getElementById('cx');
+      const frame = document.getElementById('cxFrame');
+      const closeBtn = document.getElementById('cxClose');
+      let returnTo = null;
+
+      function openConsole(trigger) {
+        returnTo = trigger || document.activeElement;
+        if (!frame.getAttribute('src') && !frame.srcdoc) {
+          frame.srcdoc = document.getElementById('console-src').value;
+        }
+        cx.hidden = false;
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => closeBtn.focus(), 0);
+      }
+      function closeConsole(to) {
+        cx.hidden = true;
+        document.body.style.overflow = '';
+        if (to) {
+          const t = document.getElementById(to);
+          if (t) t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+        }
+        if (returnTo && returnTo.focus) returnTo.focus({ preventScroll: true });
+      }
+
+      document.querySelectorAll('[data-open-console]').forEach((b) => {
+        b.addEventListener('click', () => openConsole(b));
+      });
+      closeBtn.addEventListener('click', () => closeConsole(''));
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !cx.hidden) closeConsole('');
+      });
+      addEventListener('message', (e) => {
+        if (!e.data || e.data.type !== 'failora-landing') return;
+        if (e.source !== frame.contentWindow) return;
+        closeConsole(e.data.to || '');
+      });
+    })();
+  </script>
+</body>
+</html>

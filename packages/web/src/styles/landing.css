@@ -1,0 +1,974 @@
+/* ── Landing Page — Superconscious Style ──────────────────────────── */
+
+.landing-page {
+  min-height: 100vh;
+  background: #0C0B0C;
+  color: #fafafa;
+  font-family: 'Wix Madefor Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #0C0B0C; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #9780FF; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #9780FF; }
+
+/* Selection */
+::selection { background-color: #9780ff; color: white; }
+
+/* ── Nav ─────────────────────────────────────────────────────────── */
+.landing-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2.5rem;
+  background: rgba(12, 11, 12, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.landing-nav .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.landing-nav .logo-img {
+  width: 32px;
+  height: 32px;
+}
+
+.landing-nav .logo-text {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 0%, #9780FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-nav .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #9780FF;
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #fff;
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.landing-nav .btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+}
+
+.landing-nav .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.landing-nav .btn-primary {
+  background: linear-gradient(135deg, #7322F2 0%, #9780FF 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 0 20px rgba(151, 128, 255, 0.3);
+}
+
+.landing-nav .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(151, 128, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Hero — Fullscreen like Superconscious ───────────────────────── */
+.hero {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-video-mask {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(115, 34, 242, 0.1) 0%, rgba(12, 11, 12, 0.8) 70%);
+  pointer-events: none;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1200px;
+  height: 800px;
+  background: radial-gradient(ellipse, rgba(115, 34, 242, 0.15) 0%, rgba(151, 128, 255, 0.08) 40%, transparent 70%);
+  pointer-events: none;
+  animation: heroGlowPulse 8s ease-in-out infinite;
+}
+
+@keyframes heroGlowPulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.hero-content {
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+  padding: 0 2rem;
+}
+
+.hero-title {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: clamp(4rem, 12vw, 10rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.5rem;
+  color: #fff;
+}
+
+.hero-title .line {
+  display: block;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #7322F2 0%, #9780FF 50%, #E296FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-tag {
+  font-family: 'Tiro Kannada', serif;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+  margin-bottom: 3rem;
+  letter-spacing: 0.02em;
+}
+
+.hero-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.hero-cta-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.main-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2.5rem;
+  background: linear-gradient(135deg, #7322F2 0%, #9780FF 100%);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(151, 128, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.main-button:hover {
+  box-shadow: 0 0 50px rgba(151, 128, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.button-text {
+  position: relative;
+  z-index: 1;
+}
+
+.button-hover-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #9780FF 0%, #E296FF 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.main-button:hover .button-hover-bg {
+  opacity: 1;
+}
+
+/* Hero mobile point — dashboard preview */
+.hero-mobile-point {
+  position: absolute;
+  bottom: 5%;
+  right: 5%;
+  z-index: 3;
+}
+
+.hero-mobile {
+  width: 320px;
+  opacity: 0.9;
+}
+
+.hero-down-mask {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(to top, #0C0B0C 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Logo/Stats strip ────────────────────────────────────────────── */
+.logo-sc {
+  padding: 4rem 0;
+  position: relative;
+}
+
+.logo-sc .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.hero-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.hero-stat strong {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.hero-stat span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── About — like Superconscious "Control Your Mind" ─────────────── */
+.about-sc {
+  padding: 8rem 0;
+  position: relative;
+}
+
+.about-pin {
+  position: relative;
+}
+
+.about-sc .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.about-headline {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-align: center;
+  color: #fff;
+}
+
+.about-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.about-word {
+  display: inline-block;
+}
+
+.about-icon {
+  font-size: 0.5em;
+  opacity: 0.8;
+}
+
+.about-pg {
+  padding: 4rem 0;
+}
+
+.about-pg .container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.about-pg-text {
+  font-family: 'Tiro Kannada', serif;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.about-space {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── How it Works — sticky cards ─────────────────────────────────── */
+.how-work-sc {
+  padding: 8rem 0;
+  position: relative;
+}
+
+.how-work-sc .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.how-work-sticky {
+  position: sticky;
+  top: 100px;
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.how-work-headline {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.your-space {
+  margin: 0 0.5rem;
+}
+
+.hw-italic {
+  font-family: 'Tiro Kannada', serif;
+  font-style: italic;
+}
+
+.how-work-widgets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.hw-card {
+  background: rgba(18, 18, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hw-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(115, 34, 242, 0.1) 0%, transparent 50%, rgba(151, 128, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hw-card:hover {
+  border-color: rgba(151, 128, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(115, 34, 242, 0.1);
+}
+
+.hw-card:hover::before {
+  opacity: 1;
+}
+
+.hw-card-inner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.hw-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.hw-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.hw-card p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+}
+
+/* ── What is — alternating features ──────────────────────────────── */
+.what-is-sc {
+  padding: 8rem 0;
+  position: relative;
+}
+
+.what-is-sc .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.what-is-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.what-is-item {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  padding: 4rem 0;
+}
+
+.what-is-item.reverse {
+  flex-direction: row-reverse;
+}
+
+.what-is-widget {
+  font-size: 5rem;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(115, 34, 242, 0.1);
+  border: 1px solid rgba(151, 128, 255, 0.15);
+  border-radius: 24px;
+  flex-shrink: 0;
+}
+
+.what-is-text {
+  flex: 1;
+}
+
+.what-is-text h3 {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.what-is-text p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.what-is-line {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Stack — stacked cards like Superconscious ───────────────────── */
+.stack-sc {
+  position: relative;
+}
+
+.stack-height {
+  height: 200vh;
+}
+
+.stack-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.stack-sc .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.stack-card-wrapper {
+  position: relative;
+}
+
+.stack-card {
+  background: rgba(18, 18, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 3rem;
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.stack-card.s2 {
+  background: linear-gradient(135deg, rgba(115, 34, 242, 0.1) 0%, rgba(18, 18, 20, 0.8) 100%);
+}
+
+.stack-tag {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  background: rgba(151, 128, 255, 0.1);
+  border: 1px solid rgba(151, 128, 255, 0.15);
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9780FF;
+  margin-bottom: 1.5rem;
+  width: fit-content;
+}
+
+.stack-text h2 {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.stack-text p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.7;
+}
+
+.stack-circle {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(151, 128, 255, 0.1) 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+}
+
+.stack-image {
+  font-size: 6rem;
+  text-align: center;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────────── */
+.cta-sc {
+  padding: 8rem 0;
+  position: relative;
+}
+
+.cta-sc .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.cta-card {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  background: linear-gradient(135deg, rgba(115, 34, 242, 0.15) 0%, rgba(151, 128, 255, 0.1) 50%, rgba(226, 150, 255, 0.08) 100%);
+  border: 1px solid rgba(151, 128, 255, 0.15);
+  border-radius: 32px;
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.cta-card::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(151, 128, 255, 0.1) 0%, transparent 70%);
+  top: -200px;
+  right: -200px;
+}
+
+.cta-text {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.cta-text h2 {
+  font-family: 'Wix Madefor Display', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.cta-text p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 2rem;
+}
+
+.cta-image {
+  flex-shrink: 0;
+}
+
+.cta-mockup {
+  font-size: 8rem;
+  opacity: 0.8;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.landing-footer {
+  padding: 4rem 0 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(12, 11, 12, 0.8);
+}
+
+.landing-footer .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.footer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-logo img {
+  width: 28px;
+  height: 28px;
+}
+
+.footer-logo span {
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #fff 0%, #9780FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2.5rem;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: #fff;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.footer-bottom p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footer-copy {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Dashboard Preview ───────────────────────────────────────────── */
+.dashboard-preview {
+  width: 100%;
+  background: rgba(18, 18, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(115, 34, 242, 0.1);
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.preview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.preview-dot.red { background: #ff5f57; }
+.preview-dot.yellow { background: #febc2e; }
+.preview-dot.green { background: #28c840; }
+
+.preview-title {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.preview-body {
+  padding: 1.25rem;
+}
+
+.preview-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.preview-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-stat .stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.preview-stat .stat-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.text-success { color: #34d399; }
+.text-warning { color: #fbbf24; }
+.text-danger { color: #f87171; }
+
+.preview-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 60px;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.chart-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #9780FF 0%, #7322F2 100%);
+  border-radius: 3px 3px 0 0;
+  min-height: 10%;
+  box-shadow: 0 0 8px rgba(151, 128, 255, 0.3);
+}
+
+.preview-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #34d399;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.success {
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+
+/* ── View animations (like Superconscious view-item) ─────────────── */
+[view-item="from-center"] {
+  transform: scale(0.6);
+  opacity: 0;
+  transition: transform 2s cubic-bezier(.19, 1, .22, 1), opacity .2s;
+}
+
+[view-item="from-center"].view {
+  transform: scale(1);
+  opacity: 1;
+}
+
+[view-item="from-down"] {
+  transform: scale(0.6) translateY(50%);
+  opacity: 0;
+  transition: transform 2s cubic-bezier(.19, 1, .22, 1), opacity .2s;
+}
+
+[view-item="from-down"].view {
+  transform: scale(1) translateY(0%);
+  opacity: 1;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hero-mobile-point {
+    display: none;
+  }
+
+  .how-work-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .stack-sc .container {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .what-is-item,
+  .what-is-item.reverse {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .what-is-text p {
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-nav {
+    padding: 1rem 1.5rem;
+  }
+
+  .landing-nav .nav-links {
+    gap: 1rem;
+  }
+
+  .nav-link {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-stats {
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .hero-stat-divider {
+    display: none;
+  }
+
+  .about-line {
+    gap: 1rem;
+  }
+
+  .how-work-widgets {
+    gap: 1.5rem;
+  }
+
+  .footer-top {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+}

@@ -1,5 +1,5 @@
-import type { ScenarioConfig, ScenarioResult, TestTarget } from "../types.js";
-import { executeAttempt } from "./attempt.js";
+import type { ScenarioConfig, ScenarioResult, TestTarget } from "../types.ts";
+import { executeAttempt } from "./attempt.ts";
 
 // ── Scenario Runner ─────────────────────────────────────────────────
 // Executes a failure scenario against a target with optional retries.
@@ -45,10 +45,44 @@ export async function runScenario(
   const totalDurationMs = Math.round(performance.now() - start);
 
   const lastAttempt = attempts[attempts.length - 1];
+  let usedFallback = false;
+  let behaviorValidated = false;
+  let recoveryEvidence: ScenarioResult["recoveryEvidence"];
+
+  // Try fallback if all attempts failed and fallback URL provided
+  if (!recovered && config.fallbackUrl) {
+    const fallbackTarget: TestTarget = { ...target, url: config.fallbackUrl };
+    const fallbackResult = await executeAttempt(fallbackTarget, attempts.length + 1, timeoutMs);
+    fallbackResult.usedFallback = true;
+    attempts.push(fallbackResult);
+    usedFallback = true;
+
+    if (fallbackResult.success) {
+      recovered = true;
+    }
+  }
+
+  // Validate expected behavior
+  if (config.expectedBehavior && lastAttempt) {
+    const actualBehavior = lastAttempt.success
+      ? `Request succeeded with status ${lastAttempt.statusCode} in ${lastAttempt.durationMs}ms`
+      : `Request failed: ${lastAttempt.errorMessage ?? "unknown error"}`;
+
+    behaviorValidated = lastAttempt.success;
+    recoveryEvidence = {
+      expectedBehavior: config.expectedBehavior,
+      actualBehavior,
+      validResponse: lastAttempt.success,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   let summary: string;
 
   if (!initialFailure) {
     summary = `PASS: request succeeded on first attempt (${lastAttempt.durationMs}ms)`;
+  } else if (recovered && usedFallback) {
+    summary = `RECOVERED VIA FALLBACK: primary failed, fallback succeeded after ${attempts.length} attempts`;
   } else if (recovered && usedRetry) {
     summary = `RECOVERED: initial failure, succeeded after ${attempts.length} attempts`;
   } else if (recovered) {
@@ -65,6 +99,9 @@ export async function runScenario(
     recovered,
     usedRetry,
     initialFailure,
+    usedFallback,
+    behaviorValidated,
+    recoveryEvidence,
     summary,
   };
 }

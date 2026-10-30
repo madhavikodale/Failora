@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Failora — Find the Failure. Prove the Recovery.</title>
+  <meta name="description" content="Failora detects reliability gaps, investigates failures, and verifies recovery with evidence." />
+  <meta property="og:title" content="Failora — Find the Failure. Prove the Recovery." />
+  <meta property="og:description" content="Detect reliability gaps, investigate failures, and verify recovery with evidence." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="theme-color" content="#060a12" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060a12'/%3E%3Cpath d='M7 10l6 6-6 6' stroke='%234ade80' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16 22h9' stroke='%2322d3ee' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060a12;
+      --panel: #0a1120;
+      --panel-2: #0e182b;
+      --input-bg: #050913;
+      --line: #1a2740;
+      --line-2: #26385a;
+      --text: #d7e3f4;
+      --muted: #8fa1bf;
+      --dim: #5b6f90;
+      --cyan: #22d3ee;
+      --green: #4ade80;
+      --amber: #fbbf24;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --violet: #a78bfa;
+      --orange: #fb923c;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    [data-theme="light"] {
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --panel-2: #eef2f8;
+      --input-bg: #f7f9fc;
+      --line: #d7dfeb;
+      --line-2: #b7c3d6;
+      --text: #0e1a2e;
+      --muted: #3f4f68;
+      --dim: #5d6d86;
+      --cyan: #0e7490;
+      --green: #15803d;
+      --amber: #a16207;
+      --red: #b91c1c;
+      --blue: #1d4ed8;
+      --violet: #6d28d9;
+      --orange: #c2410c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 90px; }
+    body { font-family: var(--mono); background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; overflow-x: hidden; -webkit-font-smoothing: antialiased; transition: background 0.3s, color 0.3s; }
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; background: none; border: 0; text-align: left; }
+    :focus { outline: none; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+    ::selection { background: rgba(34,211,238,0.25); }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px; }
+    section { padding: 90px 0 40px; position: relative; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .skip { position: fixed; top: 8px; left: 8px; z-index: 300; background: var(--cyan); color: #04111f; padding: 8px 14px; border-radius: 6px; font-weight: 700; transform: translateY(-200%); }
+    .skip:focus { transform: none; }
+
+    /* ---------- Background ---------- */
+    .bg-scan { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px); }
+    .bg-glow { position: fixed; inset: -10%; z-index: -3; pointer-events: none; background: radial-gradient(800px 500px at 15% 0%, rgba(34,211,238,0.07), transparent 60%), radial-gradient(700px 500px at 90% 30%, rgba(96,165,250,0.06), transparent 60%); }
+    [data-theme="light"] .bg-scan { display: none; }
+
+    /* ---------- Terminal window ---------- */
+    .term { position: relative; border: 1px solid var(--line-2); border-radius: 12px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); box-shadow: 0 30px 80px rgba(0,0,0,0.35); overflow: hidden; }
+    .term-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--panel-2); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--dim); }
+    .term-bar .d { width: 11px; height: 11px; border-radius: 50%; background: #2a3a58; }
+    .term-bar .d:nth-child(1) { background: #f87171aa; } .term-bar .d:nth-child(2) { background: #fbbf24aa; } .term-bar .d:nth-child(3) { background: #4ade80aa; }
+    .term-bar .title { margin-left: 8px; flex: 1; text-align: center; color: var(--muted); }
+    .term-bar .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--amber); }
+    .term-body { padding: 22px 24px; font-size: 14px; }
+    .l { display: block; white-space: pre-wrap; word-break: break-word; opacity: 0; transform: translateY(4px); transition: opacity 0.25s ease, transform 0.25s ease; }
+    .l.shown { opacity: 1; transform: none; }
+    .p { color: var(--cyan); } .ok { color: var(--green); } .warn { color: var(--amber); } .bad { color: var(--red); }
+    .info { color: var(--blue); } .k { color: var(--violet); } .m { color: var(--muted); } .d { color: var(--dim); }
+    .caret::after { content: "\2588"; margin-left: 4px; color: var(--cyan); animation: blink 1.05s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Copy button */
+    .copy { position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 4px 9px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--muted); background: var(--panel); transition: color 0.2s, border-color 0.2s; z-index: 2; }
+    .copy:hover { color: var(--cyan); border-color: var(--cyan); }
+    .copy[data-state="done"] { color: var(--green); border-color: var(--green); }
+    .has-copy { position: relative; }
+
+    /* ---------- Nav ---------- */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; border-bottom: 1px solid transparent; transition: background 0.3s, border-color 0.3s; }
+    .nav.scrolled { background: color-mix(in srgb, var(--bg) 88%, transparent); border-bottom-color: var(--line); backdrop-filter: blur(10px); }
+    .nav-in { display: flex; align-items: center; justify-content: space-between; height: 58px; gap: 16px; }
+    .brand { font-weight: 800; color: var(--text); font-size: 15px; white-space: nowrap; }
+    .brand .pr { color: var(--green); }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a { padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 13px; }
+    .nav-links a::before { content: "./"; color: var(--dim); }
+    .nav-links a:hover, .nav-links a.active { color: var(--cyan); background: rgba(34,211,238,0.08); }
+    .nav-right { display: flex; gap: 8px; align-items: center; }
+    .nav-right .sign { color: var(--muted); font-size: 13px; padding: 6px 10px; }
+    .nav-right .sign:hover { color: var(--text); }
+    .icon-btn { border: 1px solid var(--line-2); padding: 6px 10px; border-radius: 6px; color: var(--muted); font-size: 12px; background: var(--panel); transition: color 0.2s, border-color 0.2s; }
+    .icon-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--cyan); background: var(--cyan); color: #04111f; font-weight: 700; font-size: 13px; transition: transform 0.2s, box-shadow 0.2s, background 0.2s; }
+    .btn:hover { box-shadow: 0 0 0 4px rgba(34,211,238,0.15), 0 10px 30px rgba(34,211,238,0.2); transform: translateY(-1px); }
+    .btn.ghost { background: transparent; color: var(--cyan); }
+    .btn.ghost:hover { background: rgba(34,211,238,0.08); }
+    .menu-btn { display: none; }
+    .mobile { display: none; position: fixed; top: 58px; left: 0; right: 0; background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 22px; z-index: 99; }
+    .mobile.open { display: grid; gap: 6px; }
+    .mobile a { color: var(--muted); padding: 8px 0; border-bottom: 1px dashed var(--line); }
+
+    /* ---------- Command palette ---------- */
+    .pal-back { position: fixed; inset: 0; z-index: 200; background: rgba(2,4,10,0.6); display: flex; align-items: flex-start; justify-content: center; padding: 14vh 16px 16px; backdrop-filter: blur(4px); }
+    .pal-back[hidden] { display: none; }
+    .pal { width: min(560px, 100%); border: 1px solid var(--line-2); border-radius: 12px; background: var(--panel); box-shadow: 0 30px 80px rgba(0,0,0,0.5); overflow: hidden; }
+    .pal input { width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; color: var(--text); font-size: 15px; outline: 0; }
+    .pal input::placeholder { color: var(--dim); opacity: 1; }
+    .pal ul { list-style: none; max-height: 340px; overflow: auto; padding: 6px; }
+    .pal li button { width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--muted); font-size: 14px; }
+    .pal li button span:last-child { color: var(--dim); font-size: 12px; }
+    .pal li button[aria-selected="true"] { background: rgba(34,211,238,0.1); color: var(--text); }
+    .pal .hint { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--dim); display: flex; gap: 14px; flex-wrap: wrap; }
+    kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; color: var(--muted); }
+
+    /* ---------- Hero ---------- */
+    .hero { padding-top: 130px; min-height: 100vh; }
+    .hero-title { font-size: clamp(2rem, 5.6vw, 4.1rem); font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; margin-top: 26px; }
+    .hero-title .g { color: var(--green); }
+    .hero-title .c { color: var(--cyan); }
+    .hero-sub { margin-top: 16px; color: var(--muted); font-size: 16px; max-width: 680px; }
+    .cmd-form { margin-top: 30px; display: grid; gap: 12px; }
+    .cmd { display: flex; align-items: center; flex-wrap: wrap; border: 1px solid var(--line-2); border-radius: 10px; background: var(--input-bg); padding: 6px 6px 6px 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .cmd:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.14); }
+    .cmd.invalid { border-color: var(--red); }
+    .cmd .pr { color: var(--green); white-space: nowrap; }
+    .cmd .bin { color: var(--cyan); white-space: nowrap; margin: 0 10px 0 6px; }
+    .cmd input { flex: 1; min-width: 180px; background: transparent; border: 0; outline: 0; padding: 10px 6px; color: var(--text); font-size: 15px; }
+    .cmd input::placeholder { color: var(--dim); opacity: 1; }
+    .cmd .btn { margin-left: 8px; }
+    .form-err { min-height: 1.4em; color: var(--red); font-size: 13px; }
+    .form-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+    .link-btn { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+    .hero-foot { margin-top: 36px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+    .hero-foot span::before { content: "[ "; } .hero-foot span::after { content: " ]"; }
+    .scan-out { margin-top: 18px; display: none; }
+    .scan-out.show { display: block; }
+    .sim-note { color: var(--amber); font-size: 12.5px; margin-bottom: 10px; }
+    .nojs { margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+    /* ---------- Headings ---------- */
+    .cmd-title { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+    .cmd-title .pr { color: var(--green); }
+    .cmd-title .arg { color: var(--cyan); }
+    .h-big { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; margin-bottom: 18px; }
+    .lead { color: var(--muted); margin-bottom: 24px; max-width: 720px; }
+    .sub-h { font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin: 26px 0 10px; font-weight: 700; }
+
+    /* ---------- Dashboard ---------- */
+    .dash-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+    .dash-cell { grid-column: span 3; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; background: color-mix(in srgb, var(--text) 2%, transparent); }
+    .dash-cell .lab { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+    .dash-cell .val { font-size: 26px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .dash-cell .val small { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .dash-cell .sub { font-size: 12px; color: var(--dim); }
+    .dash-cell.wide { grid-column: span 6; }
+    .spark { font-size: 20px; letter-spacing: 1px; color: var(--cyan); white-space: nowrap; overflow: hidden; }
+    .spark .f { color: var(--red); }
+    .sevline { font-size: 13px; white-space: pre; color: var(--muted); margin-top: 8px; font-family: var(--mono); }
+    .sevline .bar { color: var(--cyan); } .sevline .bar.r { color: var(--red); } .sevline .bar.o { color: var(--orange); } .sevline .bar.y { color: var(--amber); } .sevline .bar.b { color: var(--blue); }
+    .tag-sample { color: var(--amber); border: 1px solid rgba(251,191,36,0.4); padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .list-rows { font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .list-rows div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+    .list-rows div:last-child { border-bottom: 0; }
+    .report-note { margin-top: 12px; font-size: 12.5px; color: var(--dim); }
+
+    /* ---------- Features table ---------- */
+    .table { border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+    .trow { display: grid; grid-template-columns: 118px 1.1fr 1.5fr; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--line); align-items: start; transition: background 0.2s; }
+    .trow:last-child { border-bottom: 0; }
+    .trow:hover { background: rgba(34,211,238,0.035); }
+    .trow .st { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-align: center; white-space: nowrap; width: fit-content; }
+    .st.av { color: var(--green); border: 1px solid rgba(74,222,128,0.4); }
+    .st.pl { color: var(--violet); border: 1px solid rgba(167,139,250,0.4); }
+    .trow .nm { font-weight: 700; }
+    .trow .ds { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .trow .ex { color: var(--dim); font-size: 12.5px; }
+    .trow .ex b { color: var(--amber); font-weight: 500; }
+
+    /* ---------- Pipeline ---------- */
+    .pipe { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+    .stage { padding: 22px 20px; border-right: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 60%, transparent); position: relative; transition: background 0.4s; }
+    .stage:last-child { border-right: 0; }
+    .stage .n { font-size: 12px; color: var(--dim); }
+    .stage h3 { font-size: 18px; font-weight: 800; margin-top: 6px; }
+    .stage p { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+    .stage .arrow { position: absolute; right: -11px; top: 50%; transform: translateY(-50%); z-index: 2; color: var(--cyan); background: var(--bg); width: 22px; text-align: center; font-size: 16px; }
+    .stage:last-child .arrow { display: none; }
+    .stage.on { background: rgba(34,211,238,0.06); }
+    .stage.on h3 { color: var(--cyan); }
+    .stage .state { margin-top: 12px; font-size: 12px; color: var(--dim); }
+    .stage.on .state { color: var(--green); }
+
+    /* ---------- Quickstart / API ---------- */
+    .cmdblock { border: 1px solid var(--line-2); border-radius: 10px; background: var(--input-bg); padding: 18px 20px; font-size: 13.5px; overflow-x: auto; }
+    .cmdblock .row { display: block; white-space: pre; color: var(--text); }
+    .cmdblock .row .pr { color: var(--green); }
+    .cmdblock .row .cm { color: var(--dim); }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .tbl th, .tbl td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .tbl th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .tbl td:first-child { white-space: nowrap; }
+    .tbl .meth { color: var(--cyan); font-weight: 700; }
+    .tbl code { color: var(--text); }
+    .tbl-wrap { border: 1px solid var(--line-2); border-radius: 10px; overflow-x: auto; background: var(--panel); }
+
+    /* ---------- Sample report ---------- */
+    .report-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+    .report-meta div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+    .report-meta b { display: block; color: var(--text); font-weight: 700; }
+    .findings { border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+    .f-item { border-bottom: 1px solid var(--line); }
+    .f-item:last-child { border-bottom: 0; }
+    .f-btn { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 18px; transition: background 0.2s; }
+    .f-btn:hover { background: rgba(127,127,127,0.06); }
+    .sev { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 4px; width: 84px; text-align: center; }
+    .sev.high { color: var(--orange); border: 1px solid rgba(251,146,60,0.45); }
+    .sev.med { color: var(--amber); border: 1px solid rgba(251,191,36,0.45); }
+    .sev.low { color: var(--blue); border: 1px solid rgba(96,165,250,0.45); }
+    .f-title { font-weight: 600; }
+    .f-meta { color: var(--dim); font-size: 12.5px; }
+    .f-toggle { color: var(--cyan); font-size: 13px; transition: transform 0.25s; }
+    .f-btn[aria-expanded="true"] .f-toggle { transform: rotate(90deg); }
+    .f-panel { display: none; padding: 4px 18px 22px; }
+    .f-panel.open { display: block; animation: rise 0.35s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .f-panel h4 { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; margin: 16px 0 6px; font-weight: 700; }
+    .f-panel p, .f-panel li { color: var(--muted); font-size: 14px; }
+    .f-panel ol { padding-left: 22px; }
+    .code { background: var(--input-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: 12.5px; color: var(--text); overflow-x: auto; white-space: pre; line-height: 1.7; }
+    .code .c { color: var(--dim); } .code .r { color: var(--red); } .code .g { color: var(--green); } .code .k { color: var(--violet); }
+    .verdict { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 4px; }
+    .verdict.v { color: var(--green); border: 1px solid rgba(74,222,128,0.45); }
+    .verdict.p { color: var(--amber); border: 1px solid rgba(251,191,36,0.45); }
+    .verdict.q { color: var(--blue); border: 1px solid rgba(96,165,250,0.45); }
+    .honest { margin-top: 14px; border-left: 2px solid var(--amber); padding: 8px 14px; font-size: 13px; color: var(--muted); background: rgba(251,191,36,0.05); border-radius: 0 8px 8px 0; }
+    .honest b { color: var(--amber); font-weight: 700; }
+
+    /* ---------- Why / Privacy / Status ---------- */
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .lines { font-size: 14px; color: var(--muted); display: grid; gap: 10px; }
+    .lines div::before { content: "- "; color: var(--cyan); }
+    .lines b { color: var(--text); font-weight: 600; }
+    .status-list { font-size: 14px; display: grid; gap: 8px; }
+    .status-list div { display: flex; gap: 12px; align-items: baseline; }
+    .status-list .s1 { min-width: 110px; font-weight: 700; }
+    .status-list .s1.a { color: var(--green); } .status-list .s1.p { color: var(--violet); }
+
+    /* ---------- FAQ ---------- */
+    .faq { display: grid; gap: 10px; }
+    .faq details { border: 1px solid var(--line-2); border-radius: 10px; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+    .faq details[open] { border-color: var(--cyan); }
+    .faq summary { list-style: none; cursor: pointer; padding: 16px 18px; font-weight: 700; display: flex; justify-content: space-between; gap: 12px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; color: var(--cyan); font-size: 18px; line-height: 1; }
+    .faq details[open] summary::after { content: "-"; }
+    .faq .ans { padding: 0 18px 18px; color: var(--muted); font-size: 14px; }
+
+    /* ---------- Final ---------- */
+    .final { padding: 90px 0 60px; }
+    .final h2 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1.2; }
+    .final h2 .g { color: var(--green); }
+    .final .row { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* ---------- Footer ---------- */
+    footer { border-top: 1px solid var(--line); padding: 34px 0 40px; color: var(--dim); font-size: 13px; }
+    .foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 26px; }
+    .foot h5 { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .foot a { display: block; padding: 3px 0; color: var(--dim); }
+    .foot a:hover { color: var(--cyan); }
+    .foot-end { margin-top: 26px; padding-top: 16px; border-top: 1px dashed var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+
+    /* ---------- Reveal ---------- */
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 960px) {
+      .nav-links { display: none; }
+      .nav-right .sign, .nav-right .kbd-hint { display: none; }
+      .menu-btn { display: inline-block; }
+      .dash-cell, .dash-cell.wide { grid-column: span 6; }
+      .pipe { grid-template-columns: repeat(2, 1fr); }
+      .stage:nth-child(2) { border-right: 0; }
+      .stage { border-bottom: 1px solid var(--line); }
+      .stage .arrow { display: none; }
+      .foot { grid-template-columns: 1fr 1fr; }
+      .two { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      section { padding: 70px 0 30px; }
+      .hero { padding-top: 110px; }
+      .cmd { padding: 8px 10px; }
+      .cmd .pr, .cmd .bin { font-size: 13px; }
+      .cmd .btn { width: 100%; justify-content: center; margin: 8px 0 0; }
+      .cmd input { min-width: 0; width: 100%; }
+      .trow { grid-template-columns: 1fr; gap: 8px; }
+      .pipe { grid-template-columns: 1fr; }
+      .stage { border-right: 0; }
+      .dash-cell, .dash-cell.wide { grid-column: span 12; }
+      .report-meta { grid-template-columns: 1fr; }
+      .f-btn { grid-template-columns: auto 1fr; }
+      .f-toggle { display: none; }
+      .foot { grid-template-columns: 1fr; }
+      .term-body { padding: 16px; }
+      .cmdblock { font-size: 12.5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+      .l, .reveal { opacity: 1 !important; transform: none !important; }
+    }
+
+    /* ---------- Print: report and features readable on paper ---------- */
+    @media print {
+      :root, [data-theme="light"] { --bg: #fff; --panel: #fff; --panel-2: #fff; --input-bg: #fff; --line: #ccc; --line-2: #999; --text: #000; --muted: #333; --dim: #555; --cyan: #000; --green: #000; --amber: #000; --red: #000; --blue: #000; --violet: #000; --orange: #000; }
+      body { background: #fff; color: #000; }
+      .nav, .mobile, .pal-back, .bg-scan, .bg-glow, .copy, .cmd-form, .scan-out, .hero, #features, #how, #product, #status, #docs, #start, .foot, footer, .link-btn, .hero-foot { display: none !important; }
+      section { padding: 10px 0; }
+      .reveal { opacity: 1 !important; transform: none !important; }
+      .f-panel { display: block !important; }
+      .term, .findings, .tbl-wrap, .cmdblock { box-shadow: none; }
+      .report-note { display: block; }
+    }
+    /* ---------- Auth Modal ---------- */
+    .auth-back { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .auth-back.open { display: flex; }
+    .auth-modal { background: var(--panel); border: 1px solid var(--line-2); border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); overflow: hidden; }
+    .auth-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+    .auth-head h2 { font-size: 14px; font-weight: 700; color: var(--green); margin: 0; }
+    .auth-head h2::before { content: '$ '; color: var(--dim); }
+    .auth-close { color: var(--dim); font-size: 18px; padding: 4px 8px; border-radius: 4px; }
+    .auth-close:hover { color: var(--text); background: var(--panel-2); }
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--line); }
+    .auth-tab { flex: 1; padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: var(--dim); border-bottom: 2px solid transparent; cursor: pointer; background: none; border-top: 0; border-left: 0; border-right: 0; }
+    .auth-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .auth-body { padding: 20px; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label { display: block; font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+    .auth-field label::before { content: '> '; color: var(--green); }
+    .auth-input { width: 100%; padding: 10px 12px; background: var(--input-bg); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .auth-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.1); }
+    .auth-input::placeholder { color: var(--dim); opacity: 0.5; }
+    .auth-err { padding: 10px 12px; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 6px; color: var(--red); font-size: 13px; margin-bottom: 12px; display: none; }
+    .auth-err.show { display: block; }
+    .auth-success { padding: 10px 12px; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); border-radius: 6px; color: var(--green); font-size: 13px; margin-bottom: 12px; display: none; }
+    .auth-success.show { display: block; }
+    .auth-submit { width: 100%; padding: 12px; background: var(--cyan); color: var(--bg); border: 0; border-radius: 6px; font-family: var(--mono); font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .auth-submit:hover { opacity: 0.9; }
+    .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-submit .pr { color: var(--bg); }
+    .auth-switch { text-align: center; margin-top: 14px; font-size: 13px; color: var(--dim); }
+    .auth-switch a { color: var(--cyan); cursor: pointer; }
+    .auth-switch a:hover { text-decoration: underline; }
+    .auth-user { display: flex; align-items: center; gap: 8px; }
+    .auth-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--cyan); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .auth-name { font-size: 13px; color: var(--text); }
+    .auth-logout { font-size: 12px; color: var(--dim); cursor: pointer; }
+    .auth-logout:hover { color: var(--red); }
+
+    /* ---------- Report Panel ---------- */
+    .report-panel { background: var(--panel); border: 1px solid var(--line-2); border-radius: 10px; padding: 20px; margin-top: 20px; }
+    .report-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .report-header h3 { margin: 0; font-size: 14px; color: var(--green); }
+    .report-header h3::before { content: '$ '; color: var(--dim); }
+    .report-score { font-size: 28px; font-weight: 800; }
+    .report-score.good { color: var(--green); }
+    .report-score.warn { color: var(--amber); }
+    .report-score.bad { color: var(--red); }
+    .report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .report-meta-item { background: var(--panel-2); padding: 10px; border-radius: 6px; }
+    .report-meta-item .k { font-size: 11px; color: var(--dim); text-transform: uppercase; }
+    .report-meta-item .v { font-size: 16px; font-weight: 700; color: var(--text); }
+    .report-findings { display: grid; gap: 8px; }
+    .report-finding { padding: 12px; background: var(--panel-2); border-radius: 6px; border-left: 3px solid var(--line-2); }
+    .report-finding.critical { border-left-color: var(--red); }
+    .report-finding.high { border-left-color: var(--orange); }
+    .report-finding.medium { border-left-color: var(--amber); }
+    .report-finding.low { border-left-color: var(--blue); }
+    .report-finding .sev { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px; }
+    .report-finding.critical .sev { background: rgba(248,113,113,0.2); color: var(--red); }
+    .report-finding.high .sev { background: rgba(251,146,60,0.2); color: var(--orange); }
+    .report-finding.medium .sev { background: rgba(251,191,36,0.2); color: var(--amber); }
+    .report-finding.low .sev { background: rgba(96,165,250,0.2); color: var(--blue); }
+    .report-finding .title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+    .report-finding .desc { font-size: 12px; color: var(--muted); }
+    .report-finding .loc { font-size: 11px; color: var(--dim); margin-top: 4px; font-family: var(--mono); }
+    .report-finding .fix { font-size: 12px; color: var(--cyan); margin-top: 6px; }
+    .report-finding .fix::before { content: '→ '; }
+    .report-empty { text-align: center; padding: 40px; color: var(--dim); font-size: 13px; }
+    .report-empty .icon { font-size: 32px; margin-bottom: 8px; }
+
+    /* ---------- Console (Dashboard) ---------- */
+    .console-page { display: none; min-height: 100vh; background: var(--bg); }
+    .console-page.active { display: block; }
+    .landing-page.hidden { display: none; }
+    .console-shell { max-width: 1200px; margin: 0 auto; padding: 80px 24px 40px; }
+    .console-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .console-head h1 { margin: 0; font-size: 18px; color: var(--green); }
+    .console-head h1::before { content: '$ '; color: var(--dim); }
+    .console-user { display: flex; align-items: center; gap: 10px; }
+    .console-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--cyan); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+    .console-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .console-card { background: var(--panel); border: 1px solid var(--line-2); border-radius: 10px; padding: 20px; }
+    .console-card h3 { margin: 0 0 12px; font-size: 13px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    .console-card h3::before { content: '> '; color: var(--green); }
+    .console-stat { display: flex; align-items: baseline; gap: 8px; }
+    .console-stat .num { font-size: 32px; font-weight: 800; color: var(--text); }
+    .console-stat .lbl { font-size: 12px; color: var(--dim); }
+    .console-scan-form { display: flex; gap: 8px; margin-bottom: 24px; }
+    .console-scan-input { flex: 1; padding: 12px 14px; background: var(--input-bg); border: 1px solid var(--line); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px; outline: none; }
+    .console-scan-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(34,211,238,0.1); }
+    .console-scan-btn { padding: 12px 20px; background: var(--cyan); color: var(--bg); border: 0; border-radius: 6px; font-family: var(--mono); font-size: 14px; font-weight: 700; cursor: pointer; }
+    .console-scan-btn:hover { opacity: 0.9; }
+    .console-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .console-table { width: 100%; border-collapse: collapse; }
+    .console-table th { text-align: left; padding: 10px 12px; font-size: 11px; color: var(--dim); text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    .console-table td { padding: 12px; font-size: 13px; border-bottom: 1px solid var(--line); }
+    .console-table tr:hover td { background: var(--panel-2); }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge.completed { background: rgba(74,222,128,0.15); color: var(--green); }
+    .badge.failed { background: rgba(248,113,113,0.15); color: var(--red); }
+    .badge.running { background: rgba(251,191,36,0.15); color: var(--amber); }
+    .badge.pending { background: rgba(96,165,250,0.15); color: var(--blue); }
+    .console-empty { text-align: center; padding: 60px 20px; color: var(--dim); }
+    .console-empty .icon { font-size: 40px; margin-bottom: 12px; }
+    .console-empty p { margin: 0 0 16px; font-size: 14px; }
+    .console-term { background: var(--bg2); border: 1px solid var(--line-2); border-radius: 10px; padding: 16px; margin-top: 16px; font-family: var(--mono); font-size: 13px; max-height: 400px; overflow-y: auto; }
+    .console-term .tl { margin-bottom: 6px; }
+    .console-term .ok { color: var(--green); }
+    .console-term .err { color: var(--red); }
+    .console-term .warn { color: var(--amber); }
+    .console-term .info { color: var(--cyan); }
+    .console-term .dim { color: var(--dim); }
+    .back-link { color: var(--dim); font-size: 13px; cursor: pointer; margin-bottom: 16px; display: inline-block; }
+    .back-link:hover { color: var(--cyan); }
+    .console-quick { display: flex; gap: 8px; flex-wrap: wrap; }
+    .console-quick button { padding: 8px 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; color: var(--dim); font-family: var(--mono); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .console-quick button:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  </style>
+</head>
+<body>
+
+  <a href="#main" class="skip">Skip to content</a>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-scan" aria-hidden="true"></div>
+
+  <!-- ===================== LANDING PAGE WRAPPER ===================== -->
+  <div class="landing-page" id="landingPage">
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav" id="nav">
+    <div class="wrap nav-in">
+      <a href="#top" class="brand" aria-label="Failora home"><span class="pr">$</span> failora</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#product" data-nav>product</a>
+        <a href="#features" data-nav>features</a>
+        <a href="#how" data-nav>how-it-works</a>
+        <a href="#quickstart" data-nav>quickstart</a>
+        <a href="#docs" data-nav>docs</a>
+      </nav>
+      <div class="nav-right">
+        <button class="icon-btn kbd-hint" id="palBtn" type="button" aria-haspopup="dialog">search <kbd>Ctrl K</kbd></button>
+        <button class="icon-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="Switch to light theme">light</button>
+        <div class="auth-user" id="authUser" style="display:none;">
+          <div class="auth-avatar" id="authAvatar">?</div>
+          <span class="auth-name" id="authName"></span>
+          <span class="auth-logout" id="authLogout">logout</span>
+        </div>
+        <button class="sign" id="signInBtn" type="button">sign in</button>
+        <a href="#start" class="btn">Get Started</a>
+        <button class="icon-btn menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mobile" aria-label="Open menu" type="button">menu</button>
+      </div>
+    </div>
+  </header>
+  <nav class="mobile" id="mobile" aria-label="Mobile">
+    <a href="#product">product</a>
+    <a href="#features">features</a>
+    <a href="#how">how-it-works</a>
+    <a href="#quickstart">quickstart</a>
+    <a href="#docs">docs</a>
+    <button class="sign" id="mobileSignIn" type="button">sign in</button>
+  </nav>
+
+  <!-- ===================== AUTH MODAL ===================== -->
+  <div class="auth-back" id="authBack">
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="auth-head">
+        <h2 id="authTitle">auth</h2>
+        <button class="auth-close" id="authClose" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" type="button">sign in</button>
+        <button class="auth-tab" id="tabRegister" type="button">register</button>
+      </div>
+      <div class="auth-body">
+        <div class="auth-err" id="authErr"></div>
+        <div class="auth-success" id="authSuccess"></div>
+
+        <form id="loginForm">
+          <div class="auth-field">
+            <label for="loginEmail">email</label>
+            <input class="auth-input" id="loginEmail" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="loginPass">password</label>
+            <input class="auth-input" id="loginPass" type="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button class="auth-submit" type="submit"><span class="pr">$</span> failora login</button>
+        </form>
+
+        <form id="registerForm" style="display:none;">
+          <div class="auth-field">
+            <label for="regName">name</label>
+            <input class="auth-input" id="regName" type="text" placeholder="Your name" required autocomplete="name" />
+          </div>
+          <div class="auth-field">
+            <label for="regEmail">email</label>
+            <input class="auth-input" id="regEmail" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="auth-field">
+            <label for="regPass">password</label>
+            <input class="auth-input" id="regPass" type="password" placeholder="min 6 characters" required minlength="6" autocomplete="new-password" />
+          </div>
+          <button class="auth-submit" type="submit"><span class="pr">$</span> failora register</button>
+        </form>
+
+        <div class="auth-switch">
+          <span id="switchText">No account?</span>
+          <a id="switchLink">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== COMMAND PALETTE ===================== -->
+  <div class="pal-back" id="palBack" hidden>
+    <div class="pal" role="dialog" aria-modal="true" aria-labelledby="palLabel">
+      <label id="palLabel" class="sr-only">Jump to a section</label>
+      <input id="palInput" type="text" placeholder="jump to a section..." autocomplete="off" />
+      <ul id="palList" role="listbox" aria-label="Sections"></ul>
+      <div class="hint"><span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> move</span><span><kbd>Enter</kbd> go</span><span><kbd>Esc</kbd> close</span><span><kbd>/</kbd> focus scan input</span></div>
+    </div>
+  </div>
+
+  <main id="main">
+
+  <!-- ===================== HERO ===================== -->
+  <header class="hero wrap" id="top">
+    <div class="term reveal in">
+      <div class="term-bar">
+        <span class="d"></span><span class="d"></span><span class="d"></span>
+        <span class="title">failora ~ zsh</span>
+        <span class="tag">v0.1.0</span>
+      </div>
+      <div class="term-body">
+        <div><span style="color:var(--green)">$</span> <span class="p">failora</span> <span class="m">--tagline</span></div>
+        <div class="hero-title" id="heroTitle" aria-label="Find the Failure. Prove the Recovery.">
+          <span class="g">&gt;</span> Find the Failure.<br />
+          <span class="c">&gt;</span> Prove the Recovery.
+        </div>
+        <p class="hero-sub">Detect reliability gaps, investigate failures, and verify recovery with evidence.</p>
+
+        <form class="cmd-form" id="scanForm" novalidate>
+          <label class="sr-only" for="target">Website URL or GitHub repository</label>
+          <div class="cmd" id="cmdBox">
+            <span class="pr">$</span><span class="bin">failora scan</span>
+            <input id="target" name="target" type="text" inputmode="url" autocomplete="off" spellcheck="false"
+                   placeholder="https://your-site.com" aria-describedby="formErr formNote" />
+            <button type="submit" class="btn">Scan Project</button>
+          </div>
+          <div class="form-err" id="formErr" role="alert"></div>
+          <div class="form-row" id="formNote">
+            <span>Live scan — sends request to local Failora API at <code>127.0.0.1:4200</code>.</span>
+            <button type="button" class="link-btn" id="sampleBtn">Try a sample report</button>
+          </div>
+        </form>
+
+        <noscript><p class="nojs">JavaScript is off. The scan demo and expandable findings need JavaScript. The rest of the page reads normally.</p></noscript>
+
+        <div class="scan-out term" id="scanOut" role="status" aria-live="polite">
+          <div class="term-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="title">failora scan</span><span class="tag">simulated</span></div>
+          <div class="term-body" id="scanLines">
+            <p class="sim-note">Simulation: no request is sent and no real scan runs. Real scanning is not part of the current release.</p>
+          </div>
+        </div>
+
+        <div class="hero-foot">
+          <span>public URLs and repositories</span>
+          <span>evidence for every finding</span>
+          <span>repeatable regression tests</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section id="product">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora dashboard <span class="arg">--sample</span></div>
+      <div class="term reveal">
+        <div class="term-bar">
+          <span class="d"></span><span class="d"></span><span class="d"></span>
+          <span class="title">app.failora.dev / acme-checkout</span>
+          <span class="tag-sample">SAMPLE DATA</span>
+        </div>
+        <div class="term-body">
+          <div class="dash-grid">
+            <div class="dash-cell"><div class="lab">Uptime</div><div class="val"><span data-count="99.94" data-dec="2">0</span><small>%</small></div><div class="sub">+0.12% vs 7d</div></div>
+            <div class="dash-cell"><div class="lab">Avg response p50</div><div class="val"><span data-count="238">0</span><small>ms</small></div><div class="sub">-18 ms vs 7d</div></div>
+            <div class="dash-cell"><div class="lab">Open issues</div><div class="val"><span data-count="17">0</span></div><div class="sub" style="color:var(--red)">+3 since last scan</div></div>
+            <div class="dash-cell"><div class="lab">Recovery tests</div><div class="val"><span data-count="12">0</span><small>/14 passing</small></div><div class="sub">2 need a fallback fix</div></div>
+
+            <div class="dash-cell wide">
+              <div class="lab">Heartbeat, last 60 checks</div>
+              <div class="spark" id="heartbeat" aria-hidden="true"></div>
+              <div class="sub">red = failed check</div>
+            </div>
+            <div class="dash-cell wide">
+              <div class="lab">Response time, last 24h</div>
+              <div class="spark" id="latency" aria-hidden="true"></div>
+              <div class="sub">p50 in ms, sample series</div>
+            </div>
+
+            <div class="dash-cell wide">
+              <div class="lab">Issues by severity</div>
+              <pre class="sevline" id="sevBars" aria-label="Sample issues by severity"></pre>
+            </div>
+            <div class="dash-cell wide">
+              <div class="lab">Recovery test results</div>
+              <div class="list-rows">
+                <div><span>timeout -&gt; retry -&gt; success</span><span class="ok">PASS 412ms</span></div>
+                <div><span>HTTP 429 honors Retry-After</span><span class="ok">PASS 3/3</span></div>
+                <div><span>malformed JSON -&gt; fallback</span><span class="bad">GAP</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="report-note">All values on this preview are sample data, not a live monitor.</p>
+    </div>
+  </section>
+
+  <!-- ===================== FEATURES ===================== -->
+  <section id="features">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora detect <span class="arg">--list</span></div>
+      <h2 class="h-big reveal">What Failora detects</h2>
+      <p class="lead reveal">Each category is marked as available today or planned. Examples show the kind of finding you would see, not live results.</p>
+
+      <div class="table reveal" role="table" aria-label="Detection categories and status">
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">AI retry, fallback and recovery</div><div class="ds">Checks whether retries and fallbacks actually run when an AI call fails.</div></div>
+          <div role="cell"><div class="ex">example: <b>HTTP 429 received, no retry and no fallback.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">API failures and performance</div><div class="ds">Runs timeout, 429, 500 and malformed scenarios against an endpoint.</div></div>
+          <div role="cell"><div class="ex">example: <b>POST /respond: 6% HTTP 500 in the sample run.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st av">AVAILABLE</span></div>
+          <div role="cell"><div class="nm">Regression tests from failures</div><div class="ds">Turns a failing scenario into a repeatable test.</div></div>
+          <div role="cell"><div class="ex">example: <b>timeout scenario saved as a test for every commit.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Website health and availability</div><div class="ds">Checks that a public URL responds, and how fast it does.</div></div>
+          <div role="cell"><div class="ex">example: <b>homepage returned 503 on 2 of 20 checks.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Security and configuration gaps</div><div class="ds">Flags missing headers and settings that weaken a deployment.</div></div>
+          <div role="cell"><div class="ex">example: <b>Content-Security-Policy header is not set.</b></div></div>
+        </div>
+        <div class="trow" role="row">
+          <div role="cell"><span class="st pl">PLANNED</span></div>
+          <div role="cell"><div class="nm">Repository reliability issues</div><div class="ds">Finds code paths that can hang or fail without handling.</div></div>
+          <div role="cell"><div class="ex">example: <b>src/client.ts:42 fetch() has no timeout.</b></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section id="how">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora pipeline <span class="arg">--run</span></div>
+      <h2 class="h-big reveal">How it works</h2>
+      <div class="pipe reveal" id="pipe">
+        <div class="stage" data-stage>
+          <div class="n">step 01</div><h3>Scan</h3>
+          <p>Website or GitHub repository analyzed.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 02</div><h3>Detect</h3>
+          <p>Potential gaps and failures identified.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 03</div><h3>Verify</h3>
+          <p>Recovery behavior and fixes tested.</p>
+          <div class="state">waiting</div><span class="arrow" aria-hidden="true">&rarr;</span>
+        </div>
+        <div class="stage" data-stage>
+          <div class="n">step 04</div><h3>Prevent</h3>
+          <p>Regression tests and evidence reports created.</p>
+          <div class="state">waiting</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== QUICKSTART + API (real commands from the repo README) ===================== -->
+  <section id="quickstart">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora quickstart <span class="arg">--from-readme</span></div>
+      <h2 class="h-big reveal">Run it locally in a few commands</h2>
+      <p class="lead reveal">These are the commands from the project README. Nothing here is simulated.</p>
+
+      <div class="cmdblock has-copy reveal" id="installBlock" data-copy="git clone https://github.com/madhavikodale/Failora.git
+cd Failora
+npm install
+cp .env.example .env
+npm run mock-ai
+npm run start --workspace=packages/api
+npm run test
+npm run typecheck">
+        <span class="row"><span class="pr">$</span> git clone https://github.com/madhavikodale/Failora.git</span>
+        <span class="row"><span class="pr">$</span> cd Failora</span>
+        <span class="row"><span class="pr">$</span> npm install</span>
+        <span class="row"><span class="pr">$</span> cp .env.example .env</span>
+        <span class="row"><span class="pr">$</span> npm run mock-ai <span class="cm"># mock AI service, bound to 127.0.0.1</span></span>
+        <span class="row"><span class="pr">$</span> npm run start --workspace=packages/api <span class="cm"># API on port 4200</span></span>
+        <span class="row"><span class="pr">$</span> npm run test</span>
+        <span class="row"><span class="pr">$</span> npm run typecheck</span>
+      </div>
+
+      <div class="sub-h reveal">API endpoints</div>
+      <div class="tbl-wrap reveal">
+        <table class="tbl">
+          <thead><tr><th scope="col">Method</th><th scope="col">Endpoint</th><th scope="col">Description</th></tr></thead>
+          <tbody>
+            <tr><td class="meth">GET</td><td><code>/health</code></td><td>Health check</td></tr>
+            <tr><td class="meth">POST</td><td><code>/targets</code></td><td>Create a test target</td></tr>
+            <tr><td class="meth">GET</td><td><code>/targets</code></td><td>List all targets</td></tr>
+            <tr><td class="meth">GET</td><td><code>/targets/:id</code></td><td>Get target by ID</td></tr>
+            <tr><td class="meth">DELETE</td><td><code>/targets/:id</code></td><td>Delete target</td></tr>
+            <tr><td class="meth">POST</td><td><code>/runs</code></td><td>Execute a scenario (async, returns 202)</td></tr>
+            <tr><td class="meth">GET</td><td><code>/runs?target_id=</code></td><td>List runs, filtered by target</td></tr>
+            <tr><td class="meth">GET</td><td><code>/runs/:id</code></td><td>Get run result</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sub-h reveal">Mock AI failure modes</div>
+      <div class="tbl-wrap reveal">
+        <table class="tbl">
+          <thead><tr><th scope="col">Request</th><th scope="col">What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>ANY /respond?mode=ok</code></td><td>Normal 200 response</td></tr>
+            <tr><td><code>ANY /respond?mode=slow&amp;delay=5000</code></td><td>Delays, then responds. Use for timeout tests</td></tr>
+            <tr><td><code>ANY /respond?mode=429</code></td><td>Returns HTTP 429 with Retry-After</td></tr>
+            <tr><td><code>ANY /respond?mode=500</code></td><td>Returns HTTP 500</td></tr>
+            <tr><td><code>ANY /respond?mode=malformed</code></td><td>Returns invalid JSON</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sub-h reveal">Create a target and run a scenario</div>
+      <div class="cmdblock has-copy reveal" data-copy="curl -X POST http://127.0.0.1:4200/targets -H &quot;Content-Type: application/json&quot; -d '{&quot;name&quot;:&quot;my-api&quot;,&quot;url&quot;:&quot;http://127.0.0.1:4100/respond&quot;}'
+curl -X POST http://127.0.0.1:4200/runs -H &quot;Content-Type: application/json&quot; -d '{&quot;target_id&quot;:&quot;TARGET_ID&quot;,&quot;mode&quot;:&quot;timeout&quot;,&quot;timeout_ms&quot;:1000,&quot;max_retries&quot;:2}'
+curl http://127.0.0.1:4200/runs/RUN_ID">
+        <span class="row"><span class="pr">$</span> curl -X POST http://127.0.0.1:4200/targets -H "Content-Type: application/json" \</span>
+        <span class="row">    -d '{"name":"my-api","url":"http://127.0.0.1:4100/respond"}'</span>
+        <span class="row"><span class="pr">$</span> curl -X POST http://127.0.0.1:4200/runs -H "Content-Type: application/json" \</span>
+        <span class="row">    -d '{"target_id":"TARGET_ID","mode":"timeout","timeout_ms":1000,"max_retries":2}'</span>
+        <span class="row"><span class="pr">$</span> curl http://127.0.0.1:4200/runs/RUN_ID</span>
+      </div>
+      <p class="report-note reveal">Replace TARGET_ID and RUN_ID with the values returned by the API.</p>
+    </div>
+  </section>
+
+  <!-- ===================== SAMPLE REPORT ===================== -->
+  <section id="report">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora report show <span class="arg">sample-0042</span></div>
+      <h2 class="h-big reveal">Evidence, not guesses</h2>
+
+      <div class="report-meta reveal">
+        <div><span class="m">target</span><b>api.acme.dev/respond</b></div>
+        <div><span class="m">scenarios run</span><b>14</b></div>
+        <div><span class="m">status</span><b><span class="tag-sample">SAMPLE</span></b></div>
+      </div>
+
+      <div class="findings reveal" id="findings"></div>
+      <div class="honest reveal"><b>How this sample was made:</b> hand-written illustrative data, modeled on the failure modes in the Failora README. It is not output from a real run. Use arrow keys to move between findings.</div>
+    </div>
+  </section>
+
+  <!-- ===================== WHY ===================== -->
+  <section>
+    <div class="wrap two">
+      <div class="reveal">
+        <div class="cmd-title"><span class="pr">$</span> cat why-failora.txt</div>
+        <div class="lines">
+          <div><b>Detection with recovery verification.</b> Finding a failure is half the job; Failora checks that retries and fallbacks recover.</div>
+          <div><b>Evidence-based findings.</b> Each issue links to the request, file or line behind it.</div>
+          <div><b>Repeatable regression tests.</b> A failure becomes a test that runs on every change.</div>
+          <div><b>Website and code in one workflow.</b> Planned: check what users reach and what your code does, in one report.</div>
+        </div>
+      </div>
+      <div class="reveal d1" id="privacy">
+        <div class="cmd-title"><span class="pr">$</span> failora privacy</div>
+        <div class="lines">
+          <div><b>This demo</b> runs a simulated scan in your browser. The URL you type is not sent to any server.</div>
+          <div><b>Scanning you run:</b> only URLs you own or have permission to test.</div>
+          <div><b>Failure injection</b> runs against a localhost-only mock service.</div>
+          <div><b>Repositories:</b> access rules will be documented before launch. Read access is limited to repositories you choose.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STATUS ===================== -->
+  <section id="status">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora status</div>
+      <div class="term reveal">
+        <div class="term-body status-list">
+          <div><span class="s1 a">[AVAILABLE]</span><span>Mock failure injection: timeout, 429, 500, malformed responses</span></div>
+          <div><span class="s1 a">[AVAILABLE]</span><span>Retry and fallback checks, with success rate and latency</span></div>
+          <div><span class="s1 a">[AVAILABLE]</span><span>Regression tests built from a failing scenario</span></div>
+          <div><span class="s1 p">[PLANNED]</span><span>Website scanning and repository analysis, not in the current release</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ ===================== -->
+  <section id="docs">
+    <div class="wrap">
+      <div class="cmd-title reveal"><span class="pr">$</span> failora help <span class="arg">--faq</span></div>
+      <div class="faq reveal">
+        <details open>
+          <summary>What does a URL scan check?</summary>
+          <div class="ans">The planned URL scan will check whether the page responds, how long it takes, and common header and configuration settings. Only scan URLs you own or have permission to test.</div>
+        </details>
+        <details>
+          <summary>How does a private repository connect?</summary>
+          <div class="ans">Repository analysis is planned. The connection flow and access rules will be documented before launch.</div>
+        </details>
+        <details>
+          <summary>How is recovery verification done?</summary>
+          <div class="ans">Failora injects controlled failures such as timeouts, HTTP 429, HTTP 500 and malformed responses into your target. It then checks whether retries and fallbacks run, and records success rate and latency.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL CTA ===================== -->
+  <section class="final" id="start">
+    <div class="wrap reveal">
+      <div class="cmd-title"><span class="pr">$</span> failora start</div>
+      <h2>Ready to find your next <span class="g">reliability gap?</span></h2>
+      <div class="row">
+        <a href="https://github.com/madhavikodale/Failora" target="_blank" rel="noopener" class="btn">Get Started</a>
+        <a href="#report" class="btn ghost">Explore Demo</a>
+      </div>
+    </div>
+  </section>
+
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot">
+        <div>
+          <div class="brand"><span class="pr">$</span> failora</div>
+          <p style="margin-top:10px">Find the failure. Prove the recovery.</p>
+        </div>
+        <div>
+          <h5>product</h5>
+          <a href="#features">features</a>
+          <a href="#how">how-it-works</a>
+          <a href="#report">sample report</a>
+          <a href="#quickstart">quickstart</a>
+        </div>
+        <div>
+          <h5>resources</h5>
+          <a href="#docs">documentation</a>
+          <a href="https://github.com/madhavikodale/Failora" target="_blank" rel="noopener">github</a>
+        </div>
+        <div>
+          <h5>company</h5>
+          <a href="mailto:hello@failora.dev">contact</a>
+          <a href="#privacy">privacy</a>
+          <a href="#docs">terms</a>
+        </div>
+      </div>
+      <div class="foot-end">
+        <span>&copy; 2026 Failora. All rights reserved.</span>
+        <span>built for developers who test their failure paths</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    /* ---------- Theme (light / dark), remembered per browser ---------- */
+    const themeBtn = document.getElementById('themeBtn');
+    function applyTheme(t) {
+      if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.removeAttribute('data-theme');
+      const light = t === 'light';
+      themeBtn.setAttribute('aria-pressed', String(light));
+      themeBtn.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+      themeBtn.textContent = light ? 'dark' : 'light';
+    }
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('failora_theme'); } catch (e) {}
+    applyTheme(savedTheme === 'light' ? 'light' : 'dark');
+    themeBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem('failora_theme', next); } catch (e) {}
+    });
+
+    /* ---------- Nav ---------- */
+    const nav = document.getElementById('nav');
+    const navLinks = [...document.querySelectorAll('[data-nav]')];
+    const navTargets = navLinks.map(a => document.querySelector(a.getAttribute('href')));
+    const menuBtn = document.getElementById('menuBtn');
+    const mobile = document.getElementById('mobile');
+    function setMenu(open) {
+      mobile.classList.toggle('open', open);
+      menuBtn.setAttribute('aria-expanded', String(open));
+      menuBtn.textContent = open ? 'close' : 'menu';
+    }
+    menuBtn.addEventListener('click', () => setMenu(!mobile.classList.contains('open')));
+    mobile.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+
+    function onScroll() {
+      nav.classList.toggle('scrolled', scrollY > 20);
+      let active = -1;
+      navTargets.forEach((t, i) => { if (t && t.getBoundingClientRect().top < innerHeight * 0.4) active = i; });
+      navLinks.forEach((a, i) => {
+        const on = i === active;
+        a.classList.toggle('active', on);
+        if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+      });
+    }
+    addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    /* ---------- Copy buttons ---------- */
+    document.querySelectorAll('.has-copy').forEach((block) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy';
+      btn.textContent = 'copy';
+      btn.setAttribute('aria-label', 'Copy commands');
+      btn.addEventListener('click', async () => {
+        const text = block.dataset.copy || block.textContent;
+        let ok = false;
+        try { await navigator.clipboard.writeText(text); ok = true; } catch (e) {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { ok = document.execCommand('copy'); } catch (err) {}
+          ta.remove();
+        }
+        btn.textContent = ok ? 'copied' : 'failed';
+        btn.dataset.state = ok ? 'done' : '';
+        setTimeout(() => { btn.textContent = 'copy'; btn.dataset.state = ''; }, 1600);
+      });
+      block.appendChild(btn);
+    });
+
+    /* ---------- Reveal ---------- */
+    const revealIO = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('in');
+        revealIO.unobserve(e.target);
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => { if (!el.classList.contains('in')) revealIO.observe(el); });
+
+    /* ---------- Hero title: character reveal ---------- */
+    (function () {
+      const t = document.getElementById('heroTitle');
+      if (reduce) return;
+      const textNodes = [];
+      (function walk(node) {
+        [...node.childNodes].forEach((n) => {
+          if (n.nodeType === 3) textNodes.push(n);
+          else if (n.nodeType === 1 && n.tagName !== 'BR') walk(n);
+        });
+      })(t);
+      let k = 0;
+      textNodes.forEach((n) => {
+        if (!n.textContent.trim()) return;
+        const frag = document.createDocumentFragment();
+        [...n.textContent].forEach((ch) => {
+          const s = document.createElement('span');
+          s.textContent = ch;
+          s.style.opacity = '0';
+          s.style.transition = 'opacity 0.12s linear';
+          s.dataset.k = k++;
+          frag.appendChild(s);
+        });
+        n.replaceWith(frag);
+      });
+      const chars = [...t.querySelectorAll('span[data-k]')];
+      chars.forEach((c, i) => setTimeout(() => { c.style.opacity = '1'; }, 300 + i * 22));
+      const sub = document.querySelector('.hero-sub');
+      sub.style.opacity = '0';
+      setTimeout(() => { sub.style.transition = 'opacity 0.8s'; sub.style.opacity = '1'; }, 300 + chars.length * 22 + 200);
+    })();
+
+    /* ---------- Scan input: validation, placeholder rotation, simulated output ---------- */
+    const form = document.getElementById('scanForm');
+    const input = document.getElementById('target');
+    const cmdBox = document.getElementById('cmdBox');
+    const formErr = document.getElementById('formErr');
+    const scanOut = document.getElementById('scanOut');
+    const scanLines = document.getElementById('scanLines');
+    let scanTimers = [];
+
+    const placeholders = ['https://your-site.com', 'github.com/owner/repo', 'https://api.example.com/respond'];
+    let phIdx = 0;
+    if (!reduce) {
+      setInterval(() => {
+        if (document.activeElement === input || input.value) return;
+        phIdx = (phIdx + 1) % placeholders.length;
+        input.placeholder = placeholders[phIdx];
+      }, 2800);
+    }
+
+    function validTarget(v) {
+      const s = v.trim();
+      if (!s) return false;
+      return /^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?$/i.test(s)
+          || /^(https?:\/\/)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i.test(s);
+    }
+    function setErr(msg) {
+      formErr.textContent = msg;
+      cmdBox.classList.toggle('invalid', !!msg);
+      input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    }
+
+    const API_BASE = 'http://127.0.0.1:4200';
+
+    async function runScan(target) {
+      scanTimers.forEach(clearTimeout); scanTimers = [];
+      scanLines.querySelectorAll('.l').forEach(n => n.remove());
+      scanOut.classList.add('show');
+
+      const isGitHub = /^(https?:\/\/)?github\.com\/[\w.-]+\/[\w.-]+\/?$/i.test(target.trim());
+      const url = target.trim().replace(/^https?:\/\//, '');
+
+      const addLine = (html, delay = 0) => new Promise(res => {
+        const t = setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'l shown';
+          div.innerHTML = html;
+          scanLines.appendChild(div);
+          res(div);
+        }, reduce ? 0 : delay);
+        scanTimers.push(t);
+      });
+
+      try {
+        await addLine(`<span class="p">$</span> failora scan ${esc(target)}`, 0);
+        await addLine(`<span class="d">[ .. ]</span> resolving target`, 400);
+        await addLine(`<span class="ok">[ OK ]</span> target resolved`, 800);
+
+        if (isGitHub) {
+          // GitHub repo scan
+          const parts = url.replace(/^github\.com\//, '').split('/');
+          const owner = parts[0], repo = parts[1];
+          await addLine(`<span class="d">[ .. ]</span> scanning GitHub repo ${esc(owner)}/${esc(repo)}`, 1200);
+
+          const res = await fetch(`${API_BASE}/scan-repo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner, repo })
+          });
+          const data = await res.json();
+
+          if (!res.ok) throw new Error(data.error || `repo scan failed (${res.status})`);
+          
+          await addLine(`<span class="ok">[ OK ]</span> repo scan complete`, 1600);
+          await addLine(`<span class="info">[ >> ]</span> branch: ${esc(data.branch || '?')} | files: ${data.files?.total || 0} | score: ${data.score ?? '—'}/100`, 2000);
+          
+          if (data.findings?.length > 0) {
+            await addLine(`<span class="warn">[WARN]</span> ${data.findings.length} findings: ${data.summary?.critical || 0} critical, ${data.summary?.high || 0} high`, 2400);
+            for (let i = 0; i < Math.min(3, data.findings.length); i++) {
+              const f = data.findings[i];
+              await addLine(`<span class="d">[ .. ]</span> ${esc(f.title)} <span class="dim">(${esc(f.severity)})</span>`, 2800 + i * 400);
+            }
+          } else {
+            await addLine(`<span class="ok">[ OK ]</span> no issues found — clean repo!`, 2400);
+          }
+        } else {
+          // URL scan
+          const scanUrl = target.trim().startsWith('http') ? target.trim() : `https://${target.trim()}`;
+          await addLine(`<span class="d">[ .. ]</span> checking availability and response time`, 1200);
+
+          const res = await fetch(`${API_BASE}/scans`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: scanUrl })
+          });
+          const scan = await res.json();
+
+          if (!res.ok) throw new Error(scan.error || 'scan failed');
+          await addLine(`<span class="ok">[ OK ]</span> scan started (id: ${scan.id.slice(0,8)}...)`, 1600);
+          await addLine(`<span class="d">[ .. ]</span> running checks...`, 2000);
+
+          // Poll for result
+          let result;
+          for (let i = 0; i < 30; i++) {
+            await new Promise(r => setTimeout(r, 1000));
+            const pollRes = await fetch(`${API_BASE}/scans/${scan.id}`);
+            result = await pollRes.json();
+            if (result.status === 'completed' || result.status === 'failed') break;
+          }
+
+          if (result.status === 'completed') {
+            const r = JSON.parse(result.result || '{}');
+            await addLine(`<span class="ok">[ OK ]</span> ${r.health?.status || 200} OK, ${r.health?.responseTimeMs || '?'} ms`, 2400);
+            await addLine(`<span class="d">[ .. ]</span> reviewing headers and configuration`, 2800);
+            if (r.security?.issues?.length) {
+              await addLine(`<span class="warn">[WARN]</span> ${r.security.issues[0].description || 'security issue found'}`, 3200);
+            }
+            await addLine(`<span class="ok">[ OK ]</span> score: ${result.score ?? r.overallScore ?? '—'}/100`, 3600);
+            await addLine(`<span class="info">[ >> ]</span> report ready, opening findings below`, 4000);
+          } else {
+            await addLine(`<span class="err">[FAIL]</span> scan failed: ${result.error || 'unknown'}`, 2400);
+          }
+        }
+
+        document.getElementById('report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+        openFinding(0, true);
+      } catch (err) {
+        await addLine(`<span class="err">[ERR ]</span> ${esc(err.message)}`, 0);
+        await addLine(`<span class="d">[ .. ]</span> make sure the Failora API is running on ${API_BASE}`, 400);
+      }
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validTarget(input.value)) {
+        setErr('invalid target. Use a website URL or a GitHub repo, e.g. github.com/owner/repo');
+        input.focus();
+        return;
+      }
+      setErr('');
+      runScan(input.value.trim());
+    });
+    input.addEventListener('input', () => { if (formErr.textContent) setErr(''); });
+
+    document.getElementById('sampleBtn').addEventListener('click', () => {
+      document.getElementById('report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+      openFinding(0, true);
+    });
+
+    /* ---------- Command palette (Ctrl/Cmd+K) and "/" shortcut ---------- */
+    const palBack = document.getElementById('palBack');
+    const palInput = document.getElementById('palInput');
+    const palList = document.getElementById('palList');
+    const palBtn = document.getElementById('palBtn');
+    const palItems = [
+      { label: 'Product dashboard', href: '#product', hint: 'product' },
+      { label: 'Features', href: '#features', hint: 'features' },
+      { label: 'How it works', href: '#how', hint: 'pipeline' },
+      { label: 'Quickstart commands', href: '#quickstart', hint: 'run it' },
+      { label: 'Sample report', href: '#report', hint: 'findings' },
+      { label: 'Status: what is available', href: '#status', hint: 'status' },
+      { label: 'Privacy', href: '#privacy', hint: 'privacy' },
+      { label: 'FAQ', href: '#docs', hint: 'help' },
+      { label: 'Scan a target', href: '#top', hint: 'scan' },
+    ];
+    let palSel = 0, palFiltered = palItems, lastFocus = null;
+
+    function renderPal() {
+      const q = palInput.value.trim().toLowerCase();
+      palFiltered = palItems.filter(it => !q || it.label.toLowerCase().includes(q) || it.hint.includes(q));
+      if (palSel >= palFiltered.length) palSel = 0;
+      palList.innerHTML = palFiltered.map((it, i) => `
+        <li role="option" aria-selected="${i === palSel}"><button type="button" data-i="${i}" aria-selected="${i === palSel}"><span>${esc(it.label)}</span><span>${esc(it.hint)}</span></button></li>`).join('')
+        || '<li class="m" style="padding:10px 12px;color:var(--dim)">no matches</li>';
+    }
+    function openPal() {
+      lastFocus = document.activeElement;
+      palBack.hidden = false;
+      palInput.value = '';
+      palSel = 0;
+      renderPal();
+      palInput.focus();
+    }
+    function closePal() {
+      palBack.hidden = true;
+      if (lastFocus && lastFocus.focus) lastFocus.focus();
+    }
+    function goPal(i) {
+      const it = palFiltered[i];
+      if (!it) return;
+      closePal();
+      const t = document.querySelector(it.href);
+      if (t) t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+    }
+    palBtn.addEventListener('click', openPal);
+    palInput.addEventListener('input', () => { palSel = 0; renderPal(); });
+    palList.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-i]');
+      if (b) goPal(+b.dataset.i);
+    });
+    palBack.addEventListener('click', (e) => { if (e.target === palBack) closePal(); });
+    palInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); palSel = (palSel + 1) % Math.max(1, palFiltered.length); renderPal(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); palSel = (palSel - 1 + palFiltered.length) % Math.max(1, palFiltered.length); renderPal(); }
+      else if (e.key === 'Enter') { e.preventDefault(); goPal(palSel); }
+      else if (e.key === 'Escape') { e.preventDefault(); closePal(); }
+      else if (e.key === 'Tab') { e.preventDefault(); }
+    });
+
+    addEventListener('keydown', (e) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        palBack.hidden ? openPal() : closePal();
+      } else if (e.key === '/' && !typing && palBack.hidden) {
+        e.preventDefault();
+        input.focus();
+      } else if (e.key === 'Escape') {
+        if (!palBack.hidden) closePal();
+        else if (mobile.classList.contains('open')) { setMenu(false); menuBtn.focus(); }
+      }
+    });
+
+    /* ---------- How it works: stages light up in sequence ---------- */
+    (function () {
+      const stages = [...document.querySelectorAll('[data-stage]')];
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          io.unobserve(e.target);
+          stages.forEach((s, i) => setTimeout(() => {
+            s.classList.add('on');
+            s.querySelector('.state').textContent = 'done';
+          }, reduce ? 0 : i * 450));
+        });
+      }, { threshold: 0.4 });
+      io.observe(document.getElementById('pipe'));
+    })();
+
+    /* ---------- Dashboard: sparklines, severity bars, counters ---------- */
+    (function () {
+      const blocks = '▁▂▃▄▅▆▇█';
+      const hb = document.getElementById('heartbeat');
+      let hbHTML = '';
+      for (let i = 0; i < 60; i++) {
+        const bad = i === 14 || i === 41 || i === 52;
+        if (bad) hbHTML += '<span class="f">▁</span>';
+        else hbHTML += blocks[Math.min(7, 3 + Math.round(Math.abs(Math.sin(i * 0.9)) * 3) + (i % 3 === 0 ? 1 : 0))];
+      }
+      hb.innerHTML = hbHTML;
+
+      const lat = document.getElementById('latency');
+      const latVals = [];
+      for (let x = 0; x < 48; x++) latVals.push(Math.round(220 + Math.sin(x / 4) * 26 + Math.sin(x / 1.7) * 9 + (x > 30 && x < 34 ? 40 : 0)));
+      const min = Math.min(...latVals), max = Math.max(...latVals);
+      lat.innerHTML = latVals.map(v => blocks[Math.min(7, Math.floor((v - min) / (max - min + 1) * 8))]).join('');
+
+      const rows = [
+        { label: 'critical', n: 1, w: 2, cls: 'r' },
+        { label: 'high', n: 3, w: 6, cls: 'o' },
+        { label: 'medium', n: 5, w: 10, cls: 'y' },
+        { label: 'low', n: 8, w: 16, cls: 'b' },
+      ];
+      document.getElementById('sevBars').innerHTML = rows
+        .map(r => `<b>${r.label.padEnd(9, ' ')}</b> <span class="bar ${r.cls}">${'█'.repeat(r.w)}</span>  ${r.n}`).join('\n');
+    })();
+
+    const countIO = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        const el = e.target;
+        const target = parseFloat(el.dataset.count);
+        const dec = +(el.dataset.dec || 0);
+        if (reduce) { el.textContent = target.toFixed(dec); countIO.unobserve(el); return; }
+        const start = performance.now(), dur = 1100;
+        (function tick(now) {
+          const p = Math.min(1, (now - start) / dur);
+          el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(dec);
+          if (p < 1) requestAnimationFrame(tick);
+        })(start);
+        countIO.unobserve(el);
+      });
+    }, { threshold: 0.6 });
+    document.querySelectorAll('[data-count]').forEach(el => countIO.observe(el));
+
+    /* ---------- Sample report: expandable findings + arrow keys ---------- */
+    const findings = [
+      {
+        title: 'Retry ignores Retry-After on HTTP 429',
+        sev: 'high', sevLabel: 'HIGH', meta: 'api/respond · src/client.ts:58',
+        impact: 'Under load, the client retries too early and keeps receiving 429 responses, which slows recovery.',
+        evidence: `<span class="c"># request log (sample)</span>
+<span class="r">429</span> POST /respond  Retry-After: <span class="k">2</span>  retry #1 after <span class="k">0.2 s</span>
+<span class="r">429</span> POST /respond  Retry-After: <span class="k">2</span>  retry #2 after <span class="k">0.2 s</span>
+<span class="c"># src/client.ts:58</span>  <span class="k">await</span> sleep(backoffMs)   <span class="c">// header ignored</span>`,
+        steps: [
+          'Start the mock service and set /respond?mode=429.',
+          'Send a POST request through the client.',
+          'Watch the retry timing in the request log.',
+          'Compare the delay with the Retry-After header.'
+        ],
+        fix: `<span class="c">// use the header value when present</span>
+<span class="k">const</span> wait = <span class="k">Number</span>(res.headers.get(<span class="g">'retry-after'</span>)) * 1000 || backoffMs;
+<span class="k">await</span> sleep(wait);`,
+        verdict: 'v', verdictLabel: 'VERIFIED', verifyText: 'Sample run: 3 of 3 retries waited for Retry-After.'
+      },
+      {
+        title: 'No fallback on malformed JSON',
+        sev: 'med', sevLabel: 'MEDIUM', meta: 'api/respond · src/ai.ts:31',
+        impact: 'A broken response body fails the whole request instead of switching to the fallback path.',
+        evidence: `<span class="c"># recovery test (sample)</span>
+mode=malformed   -&gt;  <span class="r">JSON.parse failed</span>
+fallback path    -&gt;  <span class="r">not triggered</span>
+<span class="c"># src/ai.ts:31</span>  <span class="k">catch</span> (e) { <span class="k">throw</span> e }`,
+        steps: [
+          'Set /respond?mode=malformed on the mock service.',
+          'Run the malformed-response scenario.',
+          'Check whether the fallback handler runs.',
+          'Confirm the request fails with no recovery.'
+        ],
+        fix: `<span class="k">catch</span> (e) {
+  <span class="k">return</span> <span class="k">await</span> fallbackModel(prompt); <span class="c">// recover</span>
+}`,
+        verdict: 'p', verdictLabel: 'PENDING RE-TEST', verifyText: 'Fix suggested. Re-run the scenario to verify recovery.'
+      },
+      {
+        title: 'Missing Cache-Control on /health',
+        sev: 'low', sevLabel: 'LOW', meta: 'website (planned check)',
+        impact: 'Health checks may return cached responses from intermediaries, which can hide real outages.',
+        evidence: `<span class="c"># header check (sample)</span>
+GET /health   200 OK
+Cache-Control: <span class="r">(missing)</span>`,
+        steps: [
+          'Request /health from a clean client.',
+          'Inspect the response headers.',
+          'Confirm Cache-Control is absent.'
+        ],
+        fix: `<span class="c"># add to the health route</span>
+Cache-Control: <span class="g">no-store</span>`,
+        verdict: 'q', verdictLabel: 'PARTIALLY VERIFIED', verifyText: 'Header confirmed missing. Fix not re-tested yet.'
+      }
+    ];
+
+    const wrapF = document.getElementById('findings');
+    wrapF.innerHTML = findings.map((f, i) => `
+      <div class="f-item">
+        <button class="f-btn" type="button" id="fb-${i}" aria-controls="fp-${i}" aria-expanded="false" data-i="${i}">
+          <span class="sev ${f.sev}">${f.sevLabel}</span>
+          <span>
+            <span class="f-title" style="display:block">${esc(f.title)}</span>
+            <span class="f-meta" style="display:block">${esc(f.meta)}</span>
+          </span>
+          <span class="f-toggle" aria-hidden="true">&#9656;</span>
+        </button>
+        <div class="f-panel" id="fp-${i}" role="region" aria-labelledby="fb-${i}">
+          <h4>impact</h4><p>${esc(f.impact)}</p>
+          <h4>evidence</h4><div class="code">${f.evidence}</div>
+          <h4>steps to reproduce</h4><ol>${f.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+          <h4>recommended fix</h4><div class="code has-copy" data-copy="${esc(f.fix.replace(/<[^>]+>/g, ''))}">${f.fix}</div>
+          <h4>verification status</h4>
+          <span class="verdict ${f.verdict}">${f.verdictLabel}</span>
+          <p style="margin-top:6px">${esc(f.verifyText)}</p>
+        </div>
+      </div>`).join('');
+
+    // Attach copy buttons to fix blocks rendered above
+    wrapF.querySelectorAll('.has-copy').forEach((block) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy';
+      btn.textContent = 'copy';
+      btn.addEventListener('click', async () => {
+        let ok = false;
+        try { await navigator.clipboard.writeText(block.dataset.copy); ok = true; } catch (e) {}
+        btn.textContent = ok ? 'copied' : 'failed';
+        btn.dataset.state = ok ? 'done' : '';
+        setTimeout(() => { btn.textContent = 'copy'; btn.dataset.state = ''; }, 1600);
+      });
+      block.appendChild(btn);
+    });
+
+    function setFinding(i, open) {
+      document.getElementById('fb-' + i).setAttribute('aria-expanded', String(open));
+      document.getElementById('fp-' + i).classList.toggle('open', open);
+    }
+    function openFinding(i, focus) {
+      setFinding(i, true);
+      if (focus) document.getElementById('fb-' + i).focus({ preventScroll: true });
+    }
+    wrapF.addEventListener('click', (e) => {
+      const btn = e.target.closest('.f-btn');
+      if (!btn) return;
+      const i = +btn.dataset.i;
+      setFinding(i, btn.getAttribute('aria-expanded') !== 'true');
+    });
+    wrapF.addEventListener('keydown', (e) => {
+      const btns = [...wrapF.querySelectorAll('.f-btn')];
+      const idx = btns.indexOf(document.activeElement);
+      if (idx < 0) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); btns[(idx + 1) % btns.length].focus(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); btns[(idx - 1 + btns.length) % btns.length].focus(); }
+    });
+
+    /* ---------- AUTH: sign in / register ---------- */
+    (function () {
+      const API = 'http://127.0.0.1:4200';
+      const authBack = document.getElementById('authBack');
+      const signInBtn = document.getElementById('signInBtn');
+      const mobileSignIn = document.getElementById('mobileSignIn');
+      const authClose = document.getElementById('authClose');
+      const authUser = document.getElementById('authUser');
+      const authAvatar = document.getElementById('authAvatar');
+      const authName = document.getElementById('authName');
+      const authLogout = document.getElementById('authLogout');
+      const tabLogin = document.getElementById('tabLogin');
+      const tabRegister = document.getElementById('tabRegister');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const authErr = document.getElementById('authErr');
+      const authSuccess = document.getElementById('authSuccess');
+      const switchText = document.getElementById('switchText');
+      const switchLink = document.getElementById('switchLink');
+      const authTitle = document.getElementById('authTitle');
+
+      let isLogin = true;
+      let token = localStorage.getItem('failora_token');
+
+      function showErr(msg) {
+        authErr.textContent = msg;
+        authErr.classList.add('show');
+        authSuccess.classList.remove('show');
+      }
+      function showSuccess(msg) {
+        authSuccess.textContent = msg;
+        authSuccess.classList.add('show');
+        authErr.classList.remove('show');
+      }
+      function clearMsg() {
+        authErr.classList.remove('show');
+        authSuccess.classList.remove('show');
+      }
+
+      function setTab(login) {
+        isLogin = login;
+        tabLogin.classList.toggle('active', login);
+        tabRegister.classList.toggle('active', !login);
+        loginForm.style.display = login ? 'block' : 'none';
+        registerForm.style.display = login ? 'none' : 'block';
+        switchText.textContent = login ? 'No account?' : 'Have an account?';
+        switchLink.textContent = login ? 'Register' : 'Sign in';
+        authTitle.textContent = login ? 'auth login' : 'auth register';
+        clearMsg();
+      }
+
+      function openAuth() {
+        authBack.classList.add('open');
+        clearMsg();
+        setTimeout(() => (isLogin ? document.getElementById('loginEmail') : document.getElementById('regName')).focus(), 100);
+      }
+      function closeAuth() {
+        authBack.classList.remove('open');
+      }
+
+      function showUser(user) {
+        authUser.style.display = 'flex';
+        signInBtn.style.display = 'none';
+        mobileSignIn.textContent = user.name;
+        authAvatar.textContent = user.name.charAt(0).toUpperCase();
+        authName.textContent = user.name;
+      }
+      function hideUser() {
+        authUser.style.display = 'none';
+        signInBtn.style.display = 'block';
+        mobileSignIn.textContent = 'sign in';
+      }
+
+      async function checkAuth() {
+        if (!token) return;
+        try {
+          const res = await fetch(`${API}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const user = await res.json();
+            showUser(user);
+          } else {
+            localStorage.removeItem('failora_token');
+            token = null;
+            hideUser();
+          }
+        } catch {
+          // API down — stay logged out
+        }
+      }
+
+      async function doLogin(e) {
+        e.preventDefault();
+        clearMsg();
+        const btn = loginForm.querySelector('.auth-submit');
+        btn.disabled = true;
+        
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPass').value;
+        
+        console.log('[Failora Auth] Login attempt:', { email, passwordLength: password.length });
+        
+        try {
+          const res = await fetch(`${API}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          
+          console.log('[Failora Auth] Response:', res.status, data);
+          
+          if (!res.ok) throw new Error(data.error || 'Login failed');
+
+          token = data.token;
+          localStorage.setItem('failora_token', token);
+          showUser(data.user);
+          showSuccess(`Welcome back, ${data.user.name}!`);
+          setTimeout(closeAuth, 800);
+        } catch (err) {
+          showErr(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function doRegister(e) {
+        e.preventDefault();
+        clearMsg();
+        const btn = registerForm.querySelector('.auth-submit');
+        btn.disabled = true;
+        try {
+          const res = await fetch(`${API}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: document.getElementById('regName').value,
+              email: document.getElementById('regEmail').value,
+              password: document.getElementById('regPass').value
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Registration failed');
+
+          showSuccess('Account created! You can now sign in.');
+          setTab(true);
+        } catch (err) {
+          showErr(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      function doLogout() {
+        localStorage.removeItem('failora_token');
+        token = null;
+        hideUser();
+      }
+
+      // Events
+      signInBtn.addEventListener('click', openAuth);
+      mobileSignIn.addEventListener('click', () => { if (!token) openAuth(); });
+      authClose.addEventListener('click', closeAuth);
+      authBack.addEventListener('click', (e) => { if (e.target === authBack) closeAuth(); });
+      tabLogin.addEventListener('click', () => setTab(true));
+      tabRegister.addEventListener('click', () => setTab(false));
+      switchLink.addEventListener('click', () => setTab(!isLogin));
+      loginForm.addEventListener('submit', doLogin);
+      registerForm.addEventListener('submit', doRegister);
+      authLogout.addEventListener('click', doLogout);
+
+      // Esc to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && authBack.classList.contains('open')) closeAuth();
+      });
+
+      // Check existing session
+      checkAuth();
+    })();
+  </script>
+</body>
+</html>

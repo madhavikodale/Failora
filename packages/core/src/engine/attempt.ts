@@ -1,4 +1,4 @@
-import type { AttemptResult, TestTarget } from "../types.js";
+import type { AttemptResult, TestTarget } from "../types.ts";
 
 // ── Single HTTP attempt ─────────────────────────────────────────────
 
@@ -52,15 +52,32 @@ export async function executeAttempt(
       errorMessage = `HTTP ${res.status}: ${res.statusText}`;
     }
 
+    // Validate schema if provided
+    let schemaValid: boolean | undefined;
+    if (target.expectedSchema && responseBody) {
+      schemaValid = validateSchema(responseBody, target.expectedSchema);
+      if (!schemaValid) {
+        errorType = "schema_mismatch";
+        errorMessage = "Response does not match expected schema";
+      }
+    }
+
+    // Check response time threshold
+    if (target.maxResponseTimeMs && durationMs > target.maxResponseTimeMs) {
+      errorType = "slow_response";
+      errorMessage = `Response took ${durationMs}ms, exceeded threshold of ${target.maxResponseTimeMs}ms`;
+    }
+
     return {
       attempt: attemptNumber,
-      success,
+      success: success && schemaValid !== false,
       statusCode: res.status,
       durationMs,
       errorType,
       errorMessage,
       responseBody,
       rawBody,
+      schemaValid,
     };
   } catch (err) {
     clearTimeout(timer);
@@ -86,4 +103,42 @@ export async function executeAttempt(
       errorMessage: err instanceof Error ? err.message : String(err),
     };
   }
+}
+
+// ── Simple Schema Validation ────────────────────────────────────────
+
+function validateSchema(data: unknown, schema: Record<string, unknown>): boolean {
+  if (typeof data !== "object" || data === null) return false;
+
+  const obj = data as Record<string, unknown>;
+
+  for (const [key, expectedType] of Object.entries(schema)) {
+    if (!(key in obj)) return false;
+
+    const actual = obj[key];
+    const expected = expectedType as string;
+
+    switch (expected) {
+      case "string":
+        if (typeof actual !== "string") return false;
+        break;
+      case "number":
+        if (typeof actual !== "number") return false;
+        break;
+      case "boolean":
+        if (typeof actual !== "boolean") return false;
+        break;
+      case "object":
+        if (typeof actual !== "object" || actual === null) return false;
+        break;
+      case "array":
+        if (!Array.isArray(actual)) return false;
+        break;
+      default:
+        // For nested schemas, just check it exists
+        if (actual === undefined || actual === null) return false;
+    }
+  }
+
+  return true;
 }

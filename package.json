@@ -10,7 +10,9 @@
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "mock-ai": "npm run start --workspace=packages/mock-ai"
+    "start": "npm run start --workspace=packages/api",
+    "dev": "npm run dev --workspace=packages/web",
+    "demo": "npm run start --workspace=packages/mock-ai"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",

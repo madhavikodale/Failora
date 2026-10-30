@@ -5,15 +5,22 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "start": "node --experimental-strip-types src/server.ts",
-    "dev": "node --experimental-strip-types --watch src/server.ts",
+    "start": "node --experimental-transform-types src/server.ts",
+    "dev": "node --experimental-transform-types --watch src/server.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "better-sqlite3": "^11.5.0",
-    "fastify": "^5.1.0",
-    "zod": "^3.23.8"
+  "@failora/core": "*",
+  "@failora/scanner": "*",
+  "@failora/monitor": "*",
+  "@failora/github-scanner": "*",
+  "@failora/auth": "*",
+  "@failora/reports": "*",
+    "@fastify/cors": "^11.0.1",
+    "better-sqlite3": "^12.2.0",
+    "fastify": "^5.6.1",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

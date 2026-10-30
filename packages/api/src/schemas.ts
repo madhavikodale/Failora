@@ -21,5 +21,26 @@ export const createRunSchema = z.object({
   retry_delay_ms: z.number().int().min(0).max(10000).optional(),
 });
 
+export const createScanSchema = z.object({
+  url: z.string().url().refine(
+    (u) => u.startsWith("http://") || u.startsWith("https://"),
+    { message: "URL must be http or https" }
+  ),
+});
+
+export const createMonitorSchema = z.object({
+  name: z.string().min(1).max(200),
+  url: z.string().url().refine(
+    (u) => u.startsWith("http://") || u.startsWith("https://"),
+    { message: "URL must be http or https" }
+  ),
+  interval_sec: z.number().int().min(10).max(3600).optional(),
+  timeout_ms: z.number().int().min(1000).max(60000).optional(),
+  expected_status_codes: z.array(z.number().int()).optional(),
+  alert_threshold: z.number().int().min(1).max(10).optional(),
+});
+
 export type CreateTargetInput = z.infer<typeof createTargetSchema>;
 export type CreateRunInput = z.infer<typeof createRunSchema>;
+export type CreateScanInput = z.infer<typeof createScanSchema>;
+export type CreateMonitorInput = z.infer<typeof createMonitorSchema>;
