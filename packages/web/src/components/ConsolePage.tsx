@@ -2,13 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api/client'
 import type { Target, ScanResult, Monitor, RepoScanResult, RepoScanFinding } from '../api/client'
 import ThemeToggle from './ThemeToggle'
+import {
+  Icon, ICONS, Button, Card, Badge, SevBadge, StatCard,
+  Progress, Switch, EmptyState, HealthRing,
+  BarChart, DonutChart, CommandPalette, Toast, StatusDot,
+} from './ui'
 
 interface ConsolePageProps {
   onBack: () => void
   user?: { id: string; email: string; name: string } | null
 }
 
-// ── Types for real data ─────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────
 
 interface ScanResultData {
   health?: { isUp?: boolean; statusCode?: number; responseTimeMs?: number }
@@ -19,38 +24,18 @@ interface ScanResultData {
   overallScore?: number
 }
 
-// ── Component ────────────────────────────────────────────────────────
-
-const Icon = ({ d, size = 18 }: { d: string; size?: number }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ width: size, height: size, flex: 'none' }}>
-    <path d={d} />
-  </svg>
-)
-
-const ICONS = {
-  overview: 'M3 3h7v8H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 15h7v6H3z',
-  websites: 'M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18',
-  repos: 'M9 19c-4 1.5-4-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1-.3-3.4 1.3a11.6 11.6 0 00-6 0C6.8 2.2 5.8 2.5 5.8 2.5a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004.4 8.9c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21',
-  issues: 'M12 3l9 16H3zM12 10v4M12 17v.5',
-  testing: 'M9 3h6M10 3v6L4.5 18.5A2 2 0 006.2 21h11.6a2 2 0 001.7-2.5L14 9V3M7.5 15h9',
-  reports: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
-  settings: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z',
-  search: 'M11 11m-7 0a7 7 0 1114 0a7 7 0 01-14 0M20 20l-3.5-3.5',
-  bell: 'M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20a2 2 0 004 0',
-  alert: 'M12 3l9 16H3zM12 10v4M12 17v.5',
-  check: 'M5 13l4 4L19 7',
-  clock: 'M12 7v5l3 3',
-}
-
-// ── Component ────────────────────────────────────────────────────────
-
 type View = 'overview' | 'websites' | 'repos' | 'issues' | 'testing' | 'reports' | 'settings'
+
+// ── Component ─────────────────────────────────────────────────────────
 
 export default function ConsolePage({ onBack, user }: ConsolePageProps) {
   const [activeView, setActiveView] = useState<View>('overview')
   const [sevFilter, setSevFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [selectedIssue, setSelectedIssue] = useState<RepoScanFinding | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
 
   // ── Real data state ───────────────────────────────────────────────
   const [targets, setTargets] = useState<Target[]>([])
@@ -69,6 +54,14 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
   const [repoUrl, setRepoUrl] = useState('')
   const [scanningRepo, setScanningRepo] = useState(false)
   const [repoResult, setRepoResult] = useState<RepoScanResult | null>(null)
+
+  // Settings state
+  const [settings, setSettings] = useState({
+    emailAlerts: true,
+    slackIntegration: false,
+    webhookUrl: false,
+    dailyDigest: true,
+  })
 
   // ── Fetch real data ───────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -96,6 +89,18 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     fetchData()
   }, [fetchData])
 
+  // ── Command palette keyboard shortcut ─────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCommandOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   // ── Handlers ──────────────────────────────────────────────────────
   const handleAddWebsite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,8 +112,10 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
       setSiteUrl('')
       setSiteName('')
       await fetchData()
+      setToast({ message: 'Website added and scan started', type: 'success' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add website')
+      setToast({ message: 'Failed to add website', type: 'error' })
     } finally {
       setScanningSite(false)
     }
@@ -120,7 +127,6 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     setScanningRepo(true)
     setRepoResult(null)
     try {
-      // Parse GitHub URL: https://github.com/owner/repo
       const match = repoUrl.trim().match(/github\.com\/([^/]+)\/([^/]+)/)
       if (!match) {
         setError('Invalid GitHub URL. Expected format: https://github.com/owner/repo')
@@ -130,14 +136,16 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
       const result = await api.scanRepo({ owner, repo: repo.replace(/\.git$/, '') })
       setRepoResult(result)
       await fetchData()
+      setToast({ message: `Scanned ${owner}/${repo}`, type: 'success' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Repository scan failed')
+      setToast({ message: 'Repository scan failed', type: 'error' })
     } finally {
       setScanningRepo(false)
     }
   }
 
-  // ── Derived metrics from real data ────────────────────────────────
+  // ── Derived metrics ───────────────────────────────────────────────
   const totalTargets = targets.length
   const completedScans = scans.filter(s => s.status === 'completed').length
   const failedScans = scans.filter(s => s.status === 'failed').length
@@ -146,7 +154,6 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     ? Math.round(scans.reduce((sum, s) => sum + (s.overall_score ?? 0), 0) / scans.length)
     : 0
 
-  // Extract real findings from repo scans (stored in scans with repo URLs)
   const realFindings: RepoScanFinding[] = scans
     .filter(s => s.result && s.url.includes('github.com'))
     .flatMap(s => {
@@ -161,35 +168,59 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     return matchSev
   })
 
-  const navItems: { id: View; label: string; icon: string }[] = [
+  // ── Nav items ─────────────────────────────────────────────────────
+  const navItems: { id: View; label: string; icon: string; badge?: number }[] = [
     { id: 'overview', label: 'Overview', icon: ICONS.overview },
-    { id: 'websites', label: 'Website monitoring', icon: ICONS.websites },
-    { id: 'repos', label: 'Repository scanner', icon: ICONS.repos },
-    { id: 'issues', label: 'Issues & findings', icon: ICONS.issues },
-    { id: 'testing', label: 'AI reliability tests', icon: ICONS.testing },
-    { id: 'reports', label: 'Reports & history', icon: ICONS.reports },
-    { id: 'settings', label: 'Integrations & settings', icon: ICONS.settings },
+    { id: 'websites', label: 'Websites', icon: ICONS.websites, badge: totalTargets },
+    { id: 'repos', label: 'Repositories', icon: ICONS.repos },
+    { id: 'issues', label: 'Issues', icon: ICONS.issues, badge: realFindings.length },
+    { id: 'testing', label: 'AI Testing', icon: ICONS.testing },
+    { id: 'reports', label: 'Reports', icon: ICONS.reports },
+    { id: 'settings', label: 'Settings', icon: ICONS.settings },
   ]
 
+  // ── Command palette actions ───────────────────────────────────────
+  const commandActions = [
+    { id: 'overview', label: 'Go to Overview', icon: ICONS.overview, shortcut: 'G O', group: 'Navigate' },
+    { id: 'websites', label: 'Go to Websites', icon: ICONS.websites, shortcut: 'G W', group: 'Navigate' },
+    { id: 'repos', label: 'Go to Repositories', icon: ICONS.repos, shortcut: 'G R', group: 'Navigate' },
+    { id: 'issues', label: 'Go to Issues', icon: ICONS.issues, shortcut: 'G I', group: 'Navigate' },
+    { id: 'testing', label: 'Go to AI Testing', icon: ICONS.testing, shortcut: 'G T', group: 'Navigate' },
+    { id: 'reports', label: 'Go to Reports', icon: ICONS.reports, shortcut: 'G H', group: 'Navigate' },
+    { id: 'settings', label: 'Go to Settings', icon: ICONS.settings, shortcut: 'G S', group: 'Navigate' },
+    { id: 'refresh', label: 'Refresh Data', icon: ICONS.refresh, shortcut: '⌘ R', group: 'Actions' },
+    { id: 'add-website', label: 'Add Website', icon: ICONS.plus, group: 'Actions' },
+    { id: 'scan-repo', label: 'Scan Repository', icon: ICONS.repos, group: 'Actions' },
+  ]
+
+  const handleCommandSelect = (actionId: string) => {
+    if (actionId === 'refresh') { fetchData(); return }
+    if (actionId === 'add-website') { setActiveView('websites'); return }
+    if (actionId === 'scan-repo') { setActiveView('repos'); return }
+    setActiveView(actionId as View)
+  }
+
+  // ── Status helpers ────────────────────────────────────────────────
   const statusBadge = (status: string) => {
-    if (status === 'up') return <span className="badge b-ok">UP</span>
-    if (status === 'degraded') return <span className="badge b-warn">DEGRADED</span>
-    return <span className="badge b-bad">DOWN</span>
+    if (status === 'up') return <Badge variant="success">UP</Badge>
+    if (status === 'degraded') return <Badge variant="warning">DEGRADED</Badge>
+    return <Badge variant="danger">DOWN</Badge>
   }
 
   const scanStatusBadge = (status: string) => {
-    if (status === 'completed') return <span className="badge b-ok">COMPLETED</span>
-    if (status === 'failed') return <span className="badge b-bad">FAILED</span>
-    return <span className="badge b-info">RUNNING</span>
+    if (status === 'completed') return <Badge variant="success">COMPLETED</Badge>
+    if (status === 'failed') return <Badge variant="danger">FAILED</Badge>
+    return <Badge variant="info">RUNNING</Badge>
   }
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <div className="console-app">
       {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside className="console-side">
+      <aside className={`console-side ${sidebarOpen ? 'open' : ''}`}>
         <button className="console-brand" onClick={onBack}>
           <span className="brand-mark">
-            <svg viewBox="0 0 16 16" fill="none" stroke="#04111f" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
               <path d="M3 4l4 4-4 4" /><path d="M9 12h4" />
             </svg>
           </span>
@@ -201,16 +232,19 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
             <button
               key={item.id}
               className={`console-nav-item ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => setActiveView(item.id)}
+              onClick={() => { setActiveView(item.id); setSidebarOpen(false) }}
             >
-              <Icon d={item.icon} />
+              <Icon d={item.icon} size={18} />
               <span className="nav-label">{item.label}</span>
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="nav-badge">{item.badge}</span>
+              )}
             </button>
           ))}
         </nav>
 
         <div className="console-side-foot">
-          <b>Live mode</b>
+          <b><span className="status-dot" />Live mode</b>
           Connected to real API. Data persists in SQLite.
         </div>
       </aside>
@@ -219,16 +253,29 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
       <main className="console-main">
         {/* Topbar */}
         <div className="console-topbar">
-          <label className="console-search">
-            <Icon d={ICONS.search} size={16} />
-            <input type="text" placeholder="Search projects, issues, scenarios" />
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Icon d={ICONS.menu} size={18} />
+            </button>
+            <label className="console-search" style={{ cursor: 'text' }} onClick={() => setCommandOpen(true)}>
+              <Icon d={ICONS.search} size={16} />
+              <input
+                type="text"
+                placeholder="Search or press ⌘K..."
+                readOnly
+              />
+            </label>
+          </div>
           <div className="console-top-right">
             <ThemeToggle />
             <button className="console-iconbtn" title="Notifications">
               <Icon d={ICONS.bell} size={17} />
+              <span className="notif-dot" />
             </button>
-            <div className="console-avatar">
+            <div className="console-avatar" title={user?.name ?? 'User'}>
               {user?.name?.charAt(0).toUpperCase() ?? 'M'}{user?.name?.split(' ')[1]?.charAt(0).toUpperCase() ?? 'K'}
             </div>
           </div>
@@ -237,61 +284,120 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 1. OVERVIEW ─────────────────────────────────────── */}
         {activeView === 'overview' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Overview</h1>
                 <p>Real projects, scans and monitoring at a glance.</p>
               </div>
-              <button className="btn-ghost btn-sm" onClick={fetchData} disabled={loading}>
-                {loading ? 'Loading...' : 'Refresh'}
-              </button>
+              <div className="view-actions">
+                <Button variant="ghost" size="sm" icon={ICONS.refresh} onClick={fetchData} loading={loading}>
+                  Refresh
+                </Button>
+              </div>
             </div>
 
             {error && (
-              <div className="console-card" style={{ marginBottom: 18, borderColor: 'var(--red)' }}>
-                <p style={{ color: 'var(--red)', margin: 0 }}>{error}</p>
-              </div>
+              <Card style={{ marginBottom: 20, borderColor: 'var(--danger)' }}>
+                <p style={{ color: 'var(--danger)', margin: 0 }}>{error}</p>
+              </Card>
             )}
 
+            {/* KPI Grid */}
             <div className="grid grid-kpi">
-              <div className="console-card kpi-card">
-                <div className="kpi-label">Targets</div>
-                <div className="kpi-val">{totalTargets}</div>
-                <div className="kpi-delta">{targets.length > 0 ? 'Monitored endpoints' : 'No targets yet'}</div>
-              </div>
-              <div className="console-card kpi-card">
-                <div className="kpi-label">Scans completed</div>
-                <div className="kpi-val">{completedScans}</div>
-                <div className="kpi-bar"><i style={{ width: scans.length > 0 ? `${(completedScans / scans.length) * 100}%` : '0%' }} /></div>
-              </div>
-              <div className="console-card kpi-card">
-                <div className="kpi-label">Scans failed</div>
-                <div className="kpi-val">{failedScans}</div>
-                <div className="kpi-delta bad">{scans.length > 0 ? `${Math.round((failedScans / scans.length) * 100)}% failure rate` : 'No scans yet'}</div>
-              </div>
-              <div className="console-card kpi-card">
-                <div className="kpi-label">Active monitors</div>
-                <div className="kpi-val">{activeMonitorCount}</div>
-                <div className="kpi-delta">{monitors.length > 0 ? `${monitors.length} total` : 'None configured'}</div>
-              </div>
-              <div className="console-card kpi-card">
-                <div className="kpi-label">Avg scan score</div>
-                <div className="kpi-val">{avgScore > 0 ? avgScore : '—'}{avgScore > 0 && <small>/100</small>}</div>
-                <div className="kpi-bar"><i style={{ width: `${avgScore}%` }} /></div>
-              </div>
+              <StatCard
+                label="Targets"
+                value={totalTargets}
+                delta={targets.length > 0 ? 'Monitored endpoints' : 'No targets yet'}
+                icon={ICONS.globe}
+              />
+              <StatCard
+                label="Scans completed"
+                value={completedScans}
+                bar={scans.length > 0 ? (completedScans / scans.length) * 100 : 0}
+                icon={ICONS.activity}
+              />
+              <StatCard
+                label="Scans failed"
+                value={failedScans}
+                delta={scans.length > 0 ? `${Math.round((failedScans / scans.length) * 100)}% failure rate` : 'No scans yet'}
+                deltaType="down"
+                icon={ICONS.alert}
+              />
+              <StatCard
+                label="Active monitors"
+                value={activeMonitorCount}
+                delta={monitors.length > 0 ? `${monitors.length} total` : 'None configured'}
+                icon={ICONS.clock}
+              />
+              <StatCard
+                label="Avg scan score"
+                value={avgScore > 0 ? avgScore : '—'}
+                bar={avgScore}
+                icon={ICONS.zap}
+              />
             </div>
 
-            <div className="grid grid-2">
-              <div className="console-card">
+            {/* Charts Row */}
+            <div className="grid grid-2" style={{ marginBottom: 20 }}>
+              <Card className="anim-fade-in-up stagger-1">
                 <div className="card-header">
-                  <h3>Recent scans</h3>
+                  <h3><Icon d={ICONS.activity} size={16} /> Scan Activity</h3>
+                  <span className="dim-text">Last 7 days</span>
+                </div>
+                <BarChart
+                  data={[
+                    { label: 'Mon', value: scans.filter(s => new Date(s.created_at).getDay() === 1).length },
+                    { label: 'Tue', value: scans.filter(s => new Date(s.created_at).getDay() === 2).length },
+                    { label: 'Wed', value: scans.filter(s => new Date(s.created_at).getDay() === 3).length },
+                    { label: 'Thu', value: scans.filter(s => new Date(s.created_at).getDay() === 4).length },
+                    { label: 'Fri', value: scans.filter(s => new Date(s.created_at).getDay() === 5).length },
+                    { label: 'Sat', value: scans.filter(s => new Date(s.created_at).getDay() === 6).length },
+                    { label: 'Sun', value: scans.filter(s => new Date(s.created_at).getDay() === 0).length },
+                  ]}
+                  height={140}
+                />
+              </Card>
+
+              <Card className="anim-fade-in-up stagger-2">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.shield} size={16} /> Issue Breakdown</h3>
+                  <span className="dim-text">{realFindings.length} total</span>
+                </div>
+                {realFindings.length > 0 ? (
+                  <DonutChart
+                    data={[
+                      { label: 'Critical', value: realFindings.filter(f => f.severity === 'critical').length, color: 'var(--sev-critical)' },
+                      { label: 'High', value: realFindings.filter(f => f.severity === 'high').length, color: 'var(--sev-high)' },
+                      { label: 'Medium', value: realFindings.filter(f => f.severity === 'medium').length, color: 'var(--sev-medium)' },
+                      { label: 'Low', value: realFindings.filter(f => f.severity === 'low').length, color: 'var(--sev-low)' },
+                    ]}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={ICONS.shield}
+                    title="No issues found"
+                    description="Scan repositories to detect security and quality issues."
+                  />
+                )}
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="grid grid-2">
+              <Card className="anim-fade-in-up stagger-3">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.clock} size={16} /> Recent scans</h3>
                   <span className="dim-text">{scans.length} total</span>
                 </div>
                 {scans.length === 0 ? (
-                  <p className="dim-text" style={{ textAlign: 'center', padding: 24 }}>No scans yet. Add a website to get started.</p>
+                  <EmptyState
+                    icon={ICONS.activity}
+                    title="No scans yet"
+                    description="Add a website to get started."
+                  />
                 ) : (
                   <div className="activity-list">
-                    {scans.slice(0, 5).map(scan => {
+                    {scans.slice(0, 6).map((scan, i) => {
                       let health: ScanResultData['health']
                       let ssl: ScanResultData['ssl']
                       try {
@@ -300,8 +406,15 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                         ssl = parsed.ssl
                       } catch { /* ignore */ }
                       return (
-                        <div key={scan.id} className="activity-item">
-                          <span className="activity-icon">{scan.status === 'completed' ? '🟢' : scan.status === 'failed' ? '🔴' : '🟡'}</span>
+                        <div key={scan.id} className="activity-item" style={{ animationDelay: `${i * 50}ms` }}>
+                          <span className="activity-icon" style={{
+                            background: scan.status === 'completed' ? 'var(--success-bg)' : scan.status === 'failed' ? 'var(--danger-bg)' : 'var(--warning-bg)'
+                          }}>
+                            <StatusDot
+                              status={scan.status === 'completed' ? 'up' : scan.status === 'failed' ? 'down' : 'degraded'}
+                              size={10}
+                            />
+                          </span>
                           <span className="activity-text">
                             {scan.url}
                             {health?.responseTimeMs != null && ` — ${health.responseTimeMs}ms`}
@@ -313,27 +426,35 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     })}
                   </div>
                 )}
-              </div>
+              </Card>
 
-              <div className="console-card">
+              <Card className="anim-fade-in-up stagger-4">
                 <div className="card-header">
-                  <h3>Active monitors</h3>
+                  <h3><Icon d={ICONS.eye} size={16} /> Active monitors</h3>
                   <span className="dim-text">{monitors.length} configured</span>
                 </div>
                 {monitors.length === 0 ? (
-                  <p className="dim-text" style={{ textAlign: 'center', padding: 24 }}>No monitors yet.</p>
+                  <EmptyState
+                    icon={ICONS.eye}
+                    title="No monitors yet"
+                    description="Set up monitoring for your endpoints."
+                  />
                 ) : (
                   <div className="activity-list">
-                    {monitors.slice(0, 5).map(m => (
-                      <div key={m.id} className="activity-item">
-                        <span className="activity-icon">{m.is_active ? '💓' : '⏸️'}</span>
+                    {monitors.slice(0, 6).map((m, i) => (
+                      <div key={m.id} className="activity-item" style={{ animationDelay: `${i * 50}ms` }}>
+                        <span className="activity-icon" style={{
+                          background: m.is_active ? 'var(--success-bg)' : 'var(--bg-elevated)'
+                        }}>
+                          <StatusDot status={m.is_active ? 'up' : 'unknown'} size={10} />
+                        </span>
                         <span className="activity-text">{m.name} ({m.url})</span>
                         <span className="activity-time">{m.interval_seconds}s interval</span>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </Card>
             </div>
           </section>
         )}
@@ -341,22 +462,24 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 2. WEBSITE MONITORING ───────────────────────────── */}
         {activeView === 'websites' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Website monitoring</h1>
                 <p>Track uptime, latency and SSL for your websites.</p>
               </div>
             </div>
 
-            <div className="console-card" style={{ marginBottom: 18 }}>
-              <div className="card-header"><h3>Add website</h3></div>
+            <Card style={{ marginBottom: 20 }} className="anim-fade-in-up stagger-1">
+              <div className="card-header">
+                <h3><Icon d={ICONS.plus} size={16} /> Add website</h3>
+              </div>
               <form onSubmit={handleAddWebsite} className="repo-form">
                 <div className="form-row">
                   <input
                     type="text"
                     placeholder="Site name (optional)"
                     className="form-input"
-                    style={{ maxWidth: 200 }}
+                    style={{ maxWidth: 220 }}
                     value={siteName}
                     onChange={e => setSiteName(e.target.value)}
                   />
@@ -368,23 +491,25 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     onChange={e => setSiteUrl(e.target.value)}
                     required
                   />
-                  <button className="btn-primary" type="submit" disabled={scanningSite}>
+                  <Button type="submit" loading={scanningSite} icon={ICONS.zap}>
                     {scanningSite ? 'Scanning...' : 'Add & scan'}
-                  </button>
+                  </Button>
                 </div>
                 <p className="note-text">Adds the URL as a target and starts a real scan (HTTP, SSL, DNS, performance).</p>
               </form>
-            </div>
+            </Card>
 
             {targets.length === 0 ? (
-              <div className="console-card">
-                <p className="dim-text" style={{ textAlign: 'center', padding: 32 }}>
-                  No websites yet. Add one above to start monitoring.
-                </p>
-              </div>
+              <Card className="anim-fade-in-up stagger-2">
+                <EmptyState
+                  icon={ICONS.globe}
+                  title="No websites yet"
+                  description="Add one above to start monitoring."
+                />
+              </Card>
             ) : (
               <div className="grid grid-3">
-                {targets.map(t => {
+                {targets.map((t, i) => {
                   const latestScan = scans.find(s => s.url === t.url)
                   let scanData: ScanResultData | null = null
                   if (latestScan?.result) {
@@ -396,7 +521,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                   const sslDays = scanData?.ssl?.daysUntilExpiry
 
                   return (
-                    <div key={t.id} className="console-card site-card">
+                    <Card key={t.id} className="site-card anim-fade-in-up" glow style={{ animationDelay: `${i * 60}ms` }}>
                       <div className="card-header">
                         <h3>{t.name}</h3>
                         {statusBadge(isUp ? 'up' : 'down')}
@@ -412,7 +537,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                         </div>
                         <div className="site-metric">
                           <span className="metric-label">SSL</span>
-                          <span className="metric-val" style={{ color: sslValid ? 'var(--green)' : 'var(--red)' }}>
+                          <span className="metric-val" style={{ color: sslValid ? 'var(--success)' : 'var(--danger)' }}>
                             {sslValid != null ? (sslValid ? `Valid${sslDays ? ` (${sslDays}d)` : ''}` : 'Invalid') : '—'}
                           </span>
                         </div>
@@ -423,16 +548,16 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                           </span>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   )
                 })}
               </div>
             )}
 
             {scans.length > 0 && (
-              <div className="console-card" style={{ marginTop: 18 }}>
+              <Card style={{ marginTop: 20 }} className="anim-fade-in-up">
                 <div className="card-header">
-                  <h3>Scan results</h3>
+                  <h3><Icon d={ICONS.list} size={16} /> Scan results</h3>
                   <span className="dim-text">{scans.length} scans</span>
                 </div>
                 <div className="table-wrap">
@@ -448,7 +573,12 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                           <tr key={scan.id}>
                             <td className="mono-text">{scan.url}</td>
                             <td>{scanStatusBadge(scan.status)}</td>
-                            <td>{scan.overall_score ?? '—'}</td>
+                            <td>
+                              <span style={{
+                                color: scan.overall_score && scan.overall_score >= 80 ? 'var(--success)' : scan.overall_score && scan.overall_score >= 60 ? 'var(--warning)' : 'var(--danger)',
+                                fontWeight: 600
+                              }}>{scan.overall_score ?? '—'}</span>
+                            </td>
                             <td>{d?.ssl?.valid != null ? (d.ssl.valid ? '✅' : '❌') : '—'}</td>
                             <td>{d?.health?.responseTimeMs != null ? `${d.health.responseTimeMs}ms` : '—'}</td>
                             <td>{new Date(scan.created_at).toLocaleString()}</td>
@@ -458,7 +588,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
           </section>
         )}
@@ -466,15 +596,17 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 3. REPOSITORY SCANNER ───────────────────────────── */}
         {activeView === 'repos' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Repository scanner</h1>
                 <p>Paste a GitHub URL to analyze code quality, security gaps, error handling and tests.</p>
               </div>
             </div>
 
-            <div className="console-card" style={{ marginBottom: 18 }}>
-              <div className="card-header"><h3>Scan a repository</h3></div>
+            <Card style={{ marginBottom: 20 }} className="anim-fade-in-up stagger-1">
+              <div className="card-header">
+                <h3><Icon d={ICONS.repos} size={16} /> Scan a repository</h3>
+              </div>
               <form onSubmit={handleScanRepo} className="repo-form">
                 <div className="form-row">
                   <input
@@ -485,34 +617,43 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     onChange={e => setRepoUrl(e.target.value)}
                     required
                   />
-                  <button className="btn-primary" type="submit" disabled={scanningRepo}>
+                  <Button type="submit" loading={scanningRepo} icon={ICONS.zap}>
                     {scanningRepo ? 'Scanning...' : 'Start scan'}
-                  </button>
+                  </Button>
                 </div>
                 <p className="note-text">Public repositories only. Private repo support requires GitHub token (coming soon).</p>
               </form>
-            </div>
+            </Card>
 
             {repoResult && (
-              <div className="console-card" style={{ marginBottom: 18 }}>
+              <Card style={{ marginBottom: 20 }} className="anim-fade-in-up stagger-2" glow>
                 <div className="card-header">
                   <h3>{repoResult.owner}/{repoResult.repo}</h3>
                   <span className="dim-text">branch: {repoResult.branch ?? 'main'}</span>
                 </div>
 
                 {repoResult.score != null && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                    <div className="kpi-val" style={{ fontSize: 48 }}>{repoResult.score}<small>/100</small></div>
-                    <div className="kpi-bar" style={{ flex: 1 }}><i style={{ width: `${repoResult.score}%` }} /></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                    <HealthRing score={repoResult.score} size={100} strokeWidth={10} />
+                    <div style={{ flex: 1 }}>
+                      <div className="kpi-label">Repository Score</div>
+                      <div className="kpi-val" style={{ fontSize: 36 }}>{repoResult.score}<small>/100</small></div>
+                      <div style={{ marginTop: 8 }}>
+                        <Progress value={repoResult.score} />
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {repoResult.summary && typeof repoResult.summary === 'object' && (
-                  <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-                    <span className="sev-badge critical">Critical: {repoResult.summary.critical}</span>
-                    <span className="sev-badge high">High: {repoResult.summary.high}</span>
-                    <span className="sev-badge medium">Medium: {repoResult.summary.medium}</span>
-                    <span className="sev-badge low">Low: {repoResult.summary.low}</span>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                    <SevBadge severity="critical" />
+                    <SevBadge severity="high" />
+                    <SevBadge severity="medium" />
+                    <SevBadge severity="low" />
+                    <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-muted)' }}>
+                      Critical: {repoResult.summary.critical} · High: {repoResult.summary.high} · Medium: {repoResult.summary.medium} · Low: {repoResult.summary.low}
+                    </span>
                   </div>
                 )}
 
@@ -525,7 +666,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                       <tbody>
                         {repoResult.findings.map((f, i) => (
                           <tr key={i} className="clickable" onClick={() => setSelectedIssue(f)}>
-                            <td><span className={`sev-badge ${f.severity}`}>{f.severity.toUpperCase()}</span></td>
+                            <td><SevBadge severity={f.severity} /></td>
                             <td>{f.title}</td>
                             <td className="mono-text">{f.file ?? '—'}</td>
                             <td>{f.line ?? '—'}</td>
@@ -536,16 +677,20 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     </table>
                   </div>
                 ) : (
-                  <p className="dim-text" style={{ textAlign: 'center', padding: 24 }}>No findings detected.</p>
+                  <EmptyState
+                    icon={ICONS.check}
+                    title="No findings detected"
+                    description="This repository looks clean."
+                  />
                 )}
-              </div>
+              </Card>
             )}
 
             {selectedIssue && repoResult && (
-              <div className="console-card issue-detail">
+              <Card className="anim-fade-in-up stagger-3">
                 <div className="card-header">
                   <h3>{selectedIssue.title}</h3>
-                  <span className={`sev-badge ${selectedIssue.severity}`}>{selectedIssue.severity.toUpperCase()}</span>
+                  <SevBadge severity={selectedIssue.severity} />
                 </div>
                 <div className="detail-grid">
                   <div>
@@ -565,7 +710,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     <p>{selectedIssue.recommendation ?? '—'}</p>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </section>
         )}
@@ -573,14 +718,14 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 4. ISSUES & FINDINGS ────────────────────────────── */}
         {activeView === 'issues' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Issues &amp; findings</h1>
                 <p>Real findings from repository scans. Filter by severity.</p>
               </div>
             </div>
 
-            <div className="console-card">
+            <Card className="anim-fade-in-up stagger-1">
               <div className="card-header">
                 <div className="chips">
                   {['all', 'critical', 'high', 'medium', 'low'].map(s => (
@@ -617,27 +762,27 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                         className={`clickable ${selectedIssue?.title === issue.title ? 'selected' : ''}`}
                         onClick={() => setSelectedIssue(issue)}
                       >
-                        <td><span className={`sev-badge ${issue.severity}`}>{issue.severity.toUpperCase()}</span></td>
+                        <td><SevBadge severity={issue.severity} /></td>
                         <td>{issue.title}</td>
                         <td className="mono-text">{issue.file ?? '—'}</td>
                         <td>
-                          <span className={`badge ${issue.severity === 'critical' ? 'b-bad' : issue.severity === 'high' ? 'b-warn' : 'b-info'}`}>
+                          <Badge variant={issue.severity === 'critical' ? 'danger' : issue.severity === 'high' ? 'warning' : 'info'}>
                             {issue.severity}
-                          </span>
+                          </Badge>
                         </td>
-                        <td><button className="btn-ghost btn-sm">Open</button></td>
+                        <td><Button variant="ghost" size="sm">Open</Button></td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
 
             {selectedIssue && (
-              <div className="console-card issue-detail">
+              <Card className="anim-fade-in-up stagger-2" style={{ marginTop: 20 }}>
                 <div className="card-header">
                   <h3>{selectedIssue.title}</h3>
-                  <span className={`sev-badge ${selectedIssue.severity}`}>{selectedIssue.severity.toUpperCase()}</span>
+                  <SevBadge severity={selectedIssue.severity} />
                 </div>
                 <div className="detail-grid">
                   <div>
@@ -657,7 +802,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     <p>{selectedIssue.recommendation ?? '—'}</p>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </section>
         )}
@@ -665,27 +810,28 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 5. AI RELIABILITY TESTS ─────────────────────────── */}
         {activeView === 'testing' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>AI reliability tests</h1>
                 <p>Chaos engineering scenarios against your API endpoints.</p>
               </div>
-              <span className="badge b-info">COMING SOON</span>
+              <Badge variant="info">COMING SOON</Badge>
             </div>
 
-            <div className="console-card">
-              <p className="dim-text" style={{ textAlign: 'center', padding: 32 }}>
-                Chaos engineering tests are not yet implemented in the backend. 
-                This section will be enabled once the reliability testing API is available.
-              </p>
-            </div>
+            <Card className="anim-fade-in-up stagger-1">
+              <EmptyState
+                icon={ICONS.testing}
+                title="Chaos engineering tests coming soon"
+                description="This section will be enabled once the reliability testing API is available."
+              />
+            </Card>
           </section>
         )}
 
         {/* ── 6. REPORTS & HISTORY ────────────────────────────── */}
         {activeView === 'reports' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Reports &amp; history</h1>
                 <p>Generated reports and past scan results.</p>
@@ -693,30 +839,38 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
             </div>
 
             <div className="grid grid-2">
-              <div className="console-card">
-                <div className="card-header"><h3>Reports</h3></div>
+              <Card className="anim-fade-in-up stagger-1">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.reports} size={16} /> Reports</h3>
+                </div>
                 <div className="list">
                   {reports.length === 0 ? (
-                    <p className="dim-text" style={{ textAlign: 'center', padding: 24 }}>No reports yet.</p>
+                    <EmptyState
+                      icon={ICONS.reports}
+                      title="No reports yet"
+                      description="Generate reports from your scan data."
+                    />
                   ) : (
-                    reports.map(r => (
-                      <div key={r.id} className="list-item">
-                        <span className="list-icon" style={{ background: 'rgba(59,130,246,0.16)', color: '#93c5fd' }}>
+                    reports.map((r, i) => (
+                      <div key={r.id} className="list-item" style={{ animationDelay: `${i * 50}ms` }}>
+                        <span className="list-icon" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>
                           <Icon d={ICONS.reports} size={16} />
                         </span>
                         <div className="list-text">
                           <div className="list-title">{r.name}</div>
                           <div className="list-sub">{r.period}</div>
                         </div>
-                        <span className="badge b-info">{r.format}</span>
+                        <Badge variant="info">{r.format}</Badge>
                       </div>
                     ))
                   )}
                 </div>
-              </div>
+              </Card>
 
-              <div className="console-card">
-                <div className="card-header"><h3>Scan history</h3></div>
+              <Card className="anim-fade-in-up stagger-2">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.clock} size={16} /> Scan history</h3>
+                </div>
                 <div className="table-wrap">
                   <table>
                     <thead>
@@ -732,7 +886,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                             <td>{scanStatusBadge(s.status)}</td>
                             <td>
                               <span style={{
-                                color: s.overall_score && s.overall_score >= 80 ? 'var(--green)' : s.overall_score && s.overall_score >= 60 ? 'var(--amber)' : 'var(--red)',
+                                color: s.overall_score && s.overall_score >= 80 ? 'var(--success)' : s.overall_score && s.overall_score >= 60 ? 'var(--warning)' : 'var(--danger)',
                                 fontWeight: 600
                               }}>{s.overall_score ?? '—'}</span>
                             </td>
@@ -743,7 +897,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             </div>
           </section>
         )}
@@ -751,7 +905,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         {/* ── 7. SETTINGS ─────────────────────────────────────── */}
         {activeView === 'settings' && (
           <section>
-            <div className="view-header">
+            <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Integrations &amp; settings</h1>
                 <p>Configure your Failora console.</p>
@@ -759,29 +913,40 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
             </div>
 
             <div className="grid grid-2">
-              <div className="console-card">
-                <div className="card-header"><h3>Notifications</h3></div>
-                {[
-                  { label: 'Email alerts', desc: 'Get notified when sites go down' },
-                  { label: 'Slack integration', desc: 'Post alerts to Slack channel' },
-                  { label: 'Webhook URL', desc: 'Send events to custom endpoint' },
-                  { label: 'Daily digest', desc: 'Receive summary every morning' },
-                ].map(item => (
-                  <div key={item.label} className="toggle-row">
-                    <div>
-                      <div className="toggle-label">{item.label}</div>
-                      <div className="toggle-desc">{item.desc}</div>
-                    </div>
-                    <label className="switch">
-                      <input type="checkbox" defaultChecked={item.label === 'Email alerts'} />
-                      <span />
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <Card className="anim-fade-in-up stagger-1">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.bell} size={16} /> Notifications</h3>
+                </div>
+                <Switch
+                  checked={settings.emailAlerts}
+                  onChange={v => setSettings(s => ({ ...s, emailAlerts: v }))}
+                  label="Email alerts"
+                  description="Get notified when sites go down"
+                />
+                <Switch
+                  checked={settings.slackIntegration}
+                  onChange={v => setSettings(s => ({ ...s, slackIntegration: v }))}
+                  label="Slack integration"
+                  description="Post alerts to Slack channel"
+                />
+                <Switch
+                  checked={settings.webhookUrl}
+                  onChange={v => setSettings(s => ({ ...s, webhookUrl: v }))}
+                  label="Webhook URL"
+                  description="Send events to custom endpoint"
+                />
+                <Switch
+                  checked={settings.dailyDigest}
+                  onChange={v => setSettings(s => ({ ...s, dailyDigest: v }))}
+                  label="Daily digest"
+                  description="Receive summary every morning"
+                />
+              </Card>
 
-              <div className="console-card">
-                <div className="card-header"><h3>Account</h3></div>
+              <Card className="anim-fade-in-up stagger-2">
+                <div className="card-header">
+                  <h3><Icon d={ICONS.users} size={16} /> Account</h3>
+                </div>
                 <div className="account-info">
                   <div className="account-avatar">
                     {user?.name?.charAt(0).toUpperCase() ?? 'M'}{user?.name?.split(' ')[1]?.charAt(0).toUpperCase() ?? 'K'}
@@ -792,14 +957,31 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                   </div>
                 </div>
                 <div className="account-actions">
-                  <button className="btn-ghost">Edit profile</button>
-                  <button className="btn-ghost" onClick={onBack}>Sign out</button>
+                  <Button variant="secondary" size="sm" icon={ICONS.edit}>Edit profile</Button>
+                  <Button variant="ghost" size="sm" onClick={onBack}>Sign out</Button>
                 </div>
-              </div>
+              </Card>
             </div>
           </section>
         )}
       </main>
+
+      {/* ── Command Palette ─────────────────────────────────────── */}
+      <CommandPalette
+        open={commandOpen}
+        onClose={() => setCommandOpen(false)}
+        onSelect={handleCommandSelect}
+        actions={commandActions}
+      />
+
+      {/* ── Toast ───────────────────────────────────────────────── */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   )
 }
