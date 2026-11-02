@@ -9,7 +9,7 @@ export const createTargetSchema = z.object({
     { message: "URL must be http or https" }
   ),
   method: z.enum(["GET", "POST", "PUT", "DELETE"]).optional(),
-  headers: z.record(z.string()).optional(),
+  headers: z.record(z.string(), z.unknown()).optional(),
   body: z.unknown().optional(),
 });
 

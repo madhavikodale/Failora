@@ -329,7 +329,8 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
 
     try {
-      const result = await scanRepo({ owner, repo, branch, token });
+      const effectiveToken = token ?? process.env.GITHUB_TOKEN;
+      const result = await scanRepo({ owner, repo, branch, token: effectiveToken });
       return result;
     } catch (err) {
       return reply.status(500).send({ error: String(err) });

@@ -223,7 +223,7 @@ export function createTarget(data: {
   name: string;
   url: string;
   method?: string;
-  headers?: Record<string, string>;
+  headers?: Record<string, unknown>;
   body?: unknown;
 }): TargetRow {
   const id = randomUUID();
