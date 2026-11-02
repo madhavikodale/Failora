@@ -1,6 +1,19 @@
 // ── GitHub Repository Scanner Types ─────────────────────────────────
 
-import type { ScanFinding } from "@failora/scanner";
+import type { Severity } from "@failora/scanner";
+
+export interface RepoScanFinding {
+  id: string;
+  category: string;
+  severity: Severity;
+  title: string;
+  description: string;
+  file?: string;
+  line?: number;
+  evidence?: string;
+  impact?: string;
+  recommendation?: string;
+}
 
 export interface RepoConfig {
   owner: string;
@@ -24,9 +37,26 @@ export interface RepoScanResult {
   scannedAt: string;
   files: {
     total: number;
+    analyzed: number;
+    skipped: number;
     byLanguage: Record<string, number>;
+    skippedReasons: {
+      tooLarge: number;
+      empty: number;
+      overLimit: number;
+    };
   };
-  findings: ScanFinding[];
+  scan: {
+    durationMs: number;
+    startedAt: string;
+    completedAt: string;
+    maxFilesLimit: number;
+    maxFileSizeBytes: number;
+    limitReached: boolean;
+    coverage: number; // analyzed / total * 100
+  };
+  checks: ScanCheck[];
+  findings: RepoScanFinding[];
   score: number; // 0-100
   summary: {
     critical: number;
@@ -34,6 +64,16 @@ export interface RepoScanResult {
     medium: number;
     low: number;
   };
+}
+
+export interface ScanCheck {
+  name: string;
+  description: string;
+  severity: "critical" | "high" | "medium" | "low";
+  filesScanned: number;
+  matchesFound: number;
+  status: "passed" | "failed" | "skipped";
+  languages: string[];
 }
 
 export interface CodePattern {

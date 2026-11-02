@@ -53,15 +53,26 @@ export interface MonitorHistory {
 }
 
 export interface RepoScanFinding {
+  id: string;
+  category: string;
   severity: string;
   title: string;
+  description: string;
   file?: string;
   line?: number;
-  category?: string;
-  description?: string;
   evidence?: string;
   impact?: string;
   recommendation?: string;
+}
+
+export interface RepoScanCheck {
+  name: string;
+  description: string;
+  severity: string;
+  filesScanned: number;
+  matchesFound: number;
+  status: "passed" | "failed" | "skipped";
+  languages: string[];
 }
 
 export interface RepoScanResult {
@@ -79,8 +90,25 @@ export interface RepoScanResult {
   scannedAt?: string;
   files?: {
     total: number;
+    analyzed: number;
+    skipped: number;
     byLanguage: Record<string, number>;
+    skippedReasons: {
+      tooLarge: number;
+      empty: number;
+      overLimit: number;
+    };
   };
+  scan?: {
+    durationMs: number;
+    startedAt: string;
+    completedAt: string;
+    maxFilesLimit: number;
+    maxFileSizeBytes: number;
+    limitReached: boolean;
+    coverage: number;
+  };
+  checks?: RepoScanCheck[];
 }
 
 export interface AuthResult {

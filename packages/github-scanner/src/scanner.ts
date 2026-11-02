@@ -1,6 +1,5 @@
-import type { RepoConfig, RepoFile, RepoScanResult } from "../types.ts";
+import type { RepoConfig, RepoFile, RepoScanResult, RepoScanFinding, ScanCheck } from "./types.ts";
 import { CODE_PATTERNS, LANGUAGE_MAP } from "./patterns.ts";
-import type { ScanFinding } from "@failora/scanner";
 
 // ── GitHub API Client (no external deps, uses fetch) ────────────────
 
@@ -67,6 +66,9 @@ function getLanguageFromPath(path: string): string {
 // ── Repo Scanner ────────────────────────────────────────────────────
 
 export async function scanRepo(config: RepoConfig): Promise<RepoScanResult> {
+  const scanStartTime = Date.now();
+  const startedAt = new Date().toISOString();
+
   // Fetch default branch if not specified
   const branch = config.branch ?? await fetchDefaultBranch(config);
 
@@ -83,11 +85,36 @@ export async function scanRepo(config: RepoConfig): Promise<RepoScanResult> {
   // Scan files for patterns (limit to reasonable files)
   const MAX_FILE_SIZE = 100 * 1024; // 100KB
   const MAX_FILES_TO_SCAN = 200;
-  const findings: ScanFinding[] = [];
 
-  const filesToScan = files
-    .filter((f) => f.size > 0 && f.size < MAX_FILE_SIZE)
-    .slice(0, MAX_FILES_TO_SCAN);
+  let filesAnalyzed = 0;
+  let filesSkippedEmpty = 0;
+  let filesSkippedTooLarge = 0;
+  let filesSkippedOverLimit = 0;
+
+  const findings: RepoScanFinding[] = [];
+
+  // Per-pattern tracking
+  const patternStats = new Map<string, { filesScanned: number; matchesFound: number }>();
+  for (const p of CODE_PATTERNS) {
+    patternStats.set(p.name, { filesScanned: 0, matchesFound: 0 });
+  }
+
+  // Filter files with reasons
+  const eligibleFiles = files.filter((f) => {
+    if (f.size === 0) {
+      filesSkippedEmpty++;
+      return false;
+    }
+    if (f.size >= MAX_FILE_SIZE) {
+      filesSkippedTooLarge++;
+      return false;
+    }
+    return true;
+  });
+
+  const filesToScan = eligibleFiles.slice(0, MAX_FILES_TO_SCAN);
+  filesSkippedOverLimit = Math.max(0, eligibleFiles.length - MAX_FILES_TO_SCAN);
+  filesAnalyzed = filesToScan.length;
 
   for (const file of filesToScan) {
     const content = await fetchFileContent(config, file.path, branch);
@@ -99,13 +126,20 @@ export async function scanRepo(config: RepoConfig): Promise<RepoScanResult> {
     for (const pattern of CODE_PATTERNS) {
       if (!pattern.languages.includes(ext)) continue;
 
+      const stats = patternStats.get(pattern.name)!;
+      stats.filesScanned++;
+
       for (let i = 0; i < lines.length; i++) {
         if (pattern.pattern.test(lines[i])) {
+          stats.matchesFound++;
           findings.push({
-            severity: pattern.severity,
+            id: `${pattern.name}-${file.path}-${i + 1}`,
             category: pattern.name,
+            severity: pattern.severity,
             title: pattern.description,
             description: `Found in ${file.path}:${i + 1}`,
+            file: file.path,
+            line: i + 1,
             evidence: lines[i].trim().slice(0, 200),
             impact: getImpactForSeverity(pattern.severity),
             recommendation: pattern.recommendation,
@@ -114,6 +148,20 @@ export async function scanRepo(config: RepoConfig): Promise<RepoScanResult> {
       }
     }
   }
+
+  // Build checks array
+  const checks: ScanCheck[] = CODE_PATTERNS.map((pattern) => {
+    const stats = patternStats.get(pattern.name)!;
+    return {
+      name: pattern.name,
+      description: pattern.description,
+      severity: pattern.severity,
+      filesScanned: stats.filesScanned,
+      matchesFound: stats.matchesFound,
+      status: stats.filesScanned === 0 ? "skipped" : stats.matchesFound > 0 ? "failed" : "passed",
+      languages: pattern.languages,
+    };
+  });
 
   // Calculate score
   const severityWeights = { critical: 25, high: 10, medium: 5, low: 1 };
@@ -126,16 +174,37 @@ export async function scanRepo(config: RepoConfig): Promise<RepoScanResult> {
   }
 
   const score = Math.max(0, 100 - deduction);
+  const completedAt = new Date().toISOString();
+  const durationMs = Date.now() - scanStartTime;
+  const totalFiles = files.length;
+  const coverage = totalFiles > 0 ? Math.round((filesAnalyzed / totalFiles) * 100) : 0;
 
   return {
     repo: config.repo,
     owner: config.owner,
     branch,
-    scannedAt: new Date().toISOString(),
+    scannedAt: completedAt,
     files: {
-      total: files.length,
+      total: totalFiles,
+      analyzed: filesAnalyzed,
+      skipped: filesSkippedEmpty + filesSkippedTooLarge + filesSkippedOverLimit,
       byLanguage,
+      skippedReasons: {
+        tooLarge: filesSkippedTooLarge,
+        empty: filesSkippedEmpty,
+        overLimit: filesSkippedOverLimit,
+      },
     },
+    scan: {
+      durationMs,
+      startedAt,
+      completedAt,
+      maxFilesLimit: MAX_FILES_TO_SCAN,
+      maxFileSizeBytes: MAX_FILE_SIZE,
+      limitReached: filesSkippedOverLimit > 0,
+      coverage,
+    },
+    checks,
     findings,
     score,
     summary,

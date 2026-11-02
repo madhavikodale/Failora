@@ -1,4 +1,4 @@
-import type { CodePattern } from "../types.ts";
+import type { CodePattern } from "./types.ts";
 
 // ── Security & Quality Patterns ─────────────────────────────────────
 

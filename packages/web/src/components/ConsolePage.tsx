@@ -626,91 +626,244 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
             </Card>
 
             {repoResult && (
-              <Card style={{ marginBottom: 20 }} className="anim-fade-in-up stagger-2" glow>
-                <div className="card-header">
-                  <h3>{repoResult.owner}/{repoResult.repo}</h3>
-                  <span className="dim-text">branch: {repoResult.branch ?? 'main'}</span>
-                </div>
+              <>
+                {/* ── Scan Summary ─────────────────────────────── */}
+                <Card style={{ marginBottom: 20 }} className="anim-fade-in-up stagger-2" glow>
+                  <div className="card-header">
+                    <h3>{repoResult.owner}/{repoResult.repo}</h3>
+                    <span className="dim-text">branch: {repoResult.branch ?? 'main'}</span>
+                  </div>
 
-                {repoResult.score != null && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
-                    <HealthRing score={repoResult.score} size={100} strokeWidth={10} />
-                    <div style={{ flex: 1 }}>
-                      <div className="kpi-label">Repository Score</div>
-                      <div className="kpi-val" style={{ fontSize: 36 }}>{repoResult.score}<small>/100</small></div>
-                      <div style={{ marginTop: 8 }}>
-                        <Progress value={repoResult.score} />
+                  {/* Score */}
+                  {repoResult.score != null && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+                      <HealthRing score={repoResult.score} size={100} strokeWidth={10} />
+                      <div style={{ flex: 1 }}>
+                        <div className="kpi-label">Repository Score</div>
+                        <div className="kpi-val" style={{ fontSize: 36 }}>{repoResult.score}<small>/100</small></div>
+                        <div style={{ marginTop: 8 }}>
+                          <Progress value={repoResult.score} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {repoResult.summary && typeof repoResult.summary === 'object' && (
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                    <SevBadge severity="critical" />
-                    <SevBadge severity="high" />
-                    <SevBadge severity="medium" />
-                    <SevBadge severity="low" />
-                    <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-muted)' }}>
-                      Critical: {repoResult.summary.critical} · High: {repoResult.summary.high} · Medium: {repoResult.summary.medium} · Low: {repoResult.summary.low}
-                    </span>
-                  </div>
-                )}
+                  {/* Severity summary */}
+                  {repoResult.summary && typeof repoResult.summary === 'object' && (
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                      <SevBadge severity="critical" />
+                      <SevBadge severity="high" />
+                      <SevBadge severity="medium" />
+                      <SevBadge severity="low" />
+                      <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text-muted)' }}>
+                        Critical: {repoResult.summary.critical} · High: {repoResult.summary.high} · Medium: {repoResult.summary.medium} · Low: {repoResult.summary.low}
+                      </span>
+                    </div>
+                  )}
 
-                {repoResult.findings && repoResult.findings.length > 0 ? (
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr><th>Severity</th><th>Finding</th><th>File</th><th>Line</th><th>Category</th></tr>
-                      </thead>
-                      <tbody>
-                        {repoResult.findings.map((f, i) => (
-                          <tr key={i} className="clickable" onClick={() => setSelectedIssue(f)}>
-                            <td><SevBadge severity={f.severity} /></td>
-                            <td>{f.title}</td>
-                            <td className="mono-text">{f.file ?? '—'}</td>
-                            <td>{f.line ?? '—'}</td>
-                            <td>{f.category ?? '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={ICONS.check}
-                    title="No findings detected"
-                    description="This repository looks clean."
-                  />
-                )}
-              </Card>
-            )}
+                  {/* ── Repository Scan Summary ─────────────────── */}
+                  {repoResult.files && repoResult.scan && (
+                    <div style={{ marginBottom: 20 }}>
+                      <h4 style={{ marginBottom: 12, fontSize: 14, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Scan Summary
+                      </h4>
+                      <div className="detail-grid" style={{ gap: 16 }}>
+                        <div>
+                          <span className="detail-label">Total Files</span>
+                          <strong>{repoResult.files.total}</strong>
+                        </div>
+                        <div>
+                          <span className="detail-label">Files Analyzed</span>
+                          <strong style={{ color: 'var(--success)' }}>{repoResult.files.analyzed}</strong>
+                        </div>
+                        <div>
+                          <span className="detail-label">Files Skipped</span>
+                          <strong style={{ color: repoResult.files.skipped > 0 ? 'var(--warning)' : 'var(--text-muted)' }}>
+                            {repoResult.files.skipped}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="detail-label">Coverage</span>
+                          <strong>{repoResult.scan.coverage}%</strong>
+                        </div>
+                        <div>
+                          <span className="detail-label">Duration</span>
+                          <strong>{(repoResult.scan.durationMs / 1000).toFixed(1)}s</strong>
+                        </div>
+                        <div>
+                          <span className="detail-label">Scanned At</span>
+                          <strong>{repoResult.scannedAt ? new Date(repoResult.scannedAt).toLocaleString() : '—'}</strong>
+                        </div>
+                      </div>
 
-            {selectedIssue && repoResult && (
-              <Card className="anim-fade-in-up stagger-3">
-                <div className="card-header">
-                  <h3>{selectedIssue.title}</h3>
-                  <SevBadge severity={selectedIssue.severity} />
-                </div>
-                <div className="detail-grid">
-                  <div>
-                    <h4>Location</h4>
-                    <p className="mono-text">{selectedIssue.file}{selectedIssue.line ? `:${selectedIssue.line}` : ''}</p>
-                  </div>
-                  <div>
-                    <h4>Category</h4>
-                    <p>{selectedIssue.category ?? '—'}</p>
-                  </div>
-                  <div>
-                    <h4>Impact</h4>
-                    <p>{selectedIssue.impact ?? '—'}</p>
-                  </div>
-                  <div>
-                    <h4>Recommendation</h4>
-                    <p>{selectedIssue.recommendation ?? '—'}</p>
-                  </div>
-                </div>
-              </Card>
+                      {/* Skipped reasons breakdown */}
+                      {repoResult.files.skipped > 0 && (
+                        <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--bg-elevated)', borderRadius: 8, fontSize: 13 }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Skipped: </span>
+                          {repoResult.files.skippedReasons.empty > 0 && <span>empty: {repoResult.files.skippedReasons.empty} </span>}
+                          {repoResult.files.skippedReasons.tooLarge > 0 && <span>too large: {repoResult.files.skippedReasons.tooLarge} </span>}
+                          {repoResult.files.skippedReasons.overLimit > 0 && (
+                            <span style={{ color: 'var(--warning)' }}>
+                              over {repoResult.scan.maxFilesLimit}-file limit: {repoResult.files.skippedReasons.overLimit}
+                              {repoResult.scan.limitReached && ' (limit reached)'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Languages */}
+                      {Object.keys(repoResult.files.byLanguage).length > 0 && (
+                        <div style={{ marginTop: 12 }}>
+                          <span className="detail-label" style={{ display: 'block', marginBottom: 6 }}>Languages Detected</span>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {Object.entries(repoResult.files.byLanguage)
+                              .sort((a, b) => b[1] - a[1])
+                              .slice(0, 10)
+                              .map(([lang, count]) => (
+                                <span key={lang} style={{
+                                  padding: '4px 10px',
+                                  background: 'var(--bg-elevated)',
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                  color: 'var(--text-muted)',
+                                }}>
+                                  {lang}: {count}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ── Scan Checks ─────────────────────────────── */}
+                  {repoResult.checks && repoResult.checks.length > 0 && (
+                    <div style={{ marginBottom: 20 }}>
+                      <h4 style={{ marginBottom: 12, fontSize: 14, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Scan Checks
+                      </h4>
+                      <div className="table-wrap">
+                        <table>
+                          <thead>
+                            <tr><th>Status</th><th>Check</th><th>Severity</th><th>Files Scanned</th><th>Matches</th></tr>
+                          </thead>
+                          <tbody>
+                            {repoResult.checks.map((check) => (
+                              <tr key={check.name}>
+                                <td>
+                                  {check.status === 'passed' && <Badge variant="success">PASSED</Badge>}
+                                  {check.status === 'failed' && <Badge variant="danger">FAILED</Badge>}
+                                  {check.status === 'skipped' && <Badge variant="warning">SKIPPED</Badge>}
+                                </td>
+                                <td>
+                                  <div style={{ fontWeight: 500 }}>{check.name}</div>
+                                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{check.description}</div>
+                                </td>
+                                <td><SevBadge severity={check.severity} /></td>
+                                <td>{check.filesScanned}</td>
+                                <td style={{ color: check.matchesFound > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                  {check.matchesFound}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Findings ────────────────────────────────── */}
+                  {repoResult.findings && repoResult.findings.length > 0 ? (
+                    <div>
+                      <h4 style={{ marginBottom: 12, fontSize: 14, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Findings ({repoResult.findings.length})
+                      </h4>
+                      <div className="table-wrap">
+                        <table>
+                          <thead>
+                            <tr><th>Severity</th><th>Finding</th><th>File</th><th>Line</th><th>Category</th></tr>
+                          </thead>
+                          <tbody>
+                            {repoResult.findings.map((f, i) => (
+                              <tr key={f.id ?? i} className="clickable" onClick={() => setSelectedIssue(f)}>
+                                <td><SevBadge severity={f.severity} /></td>
+                                <td>{f.title}</td>
+                                <td className="mono-text">{f.file ?? '—'}</td>
+                                <td>{f.line ?? '—'}</td>
+                                <td>{f.category ?? '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Zero Findings ─────────────────────────── */
+                    <div>
+                      <EmptyState
+                        icon={ICONS.check}
+                        title="No findings detected"
+                        description="No issues matched the scan patterns in the analyzed files."
+                      />
+                      {repoResult.files && repoResult.files.analyzed > 0 && (
+                        <div style={{ marginTop: 12, padding: '12px 16px', background: 'var(--bg-elevated)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+                          <p style={{ margin: '0 0 6px' }}><strong>{repoResult.files.analyzed} files</strong> were analyzed across {Object.keys(repoResult.files.byLanguage).length} languages.</p>
+                          <p style={{ margin: '0 0 6px' }}>{repoResult.checks?.filter(c => c.status === 'passed').length ?? 0} checks passed, {repoResult.checks?.filter(c => c.status === 'skipped').length ?? 0} checks skipped.</p>
+                          {repoResult.files.skipped > 0 && (
+                            <p style={{ margin: '0 0 6px', color: 'var(--warning)' }}>{repoResult.files.skipped} files were skipped (see summary above).</p>
+                          )}
+                          <p style={{ margin: 0, fontStyle: 'italic' }}>Zero findings does not guarantee the repository is completely secure. Review skipped files and consider additional security audits.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+
+                {/* ── Finding Detail ─────────────────────────── */}
+                {selectedIssue && (
+                  <Card className="anim-fade-in-up stagger-3">
+                    <div className="card-header">
+                      <h3>{selectedIssue.title}</h3>
+                      <SevBadge severity={selectedIssue.severity} />
+                    </div>
+                    <div className="detail-grid">
+                      <div>
+                        <h4>Location</h4>
+                        <p className="mono-text">{selectedIssue.file}{selectedIssue.line ? `:${selectedIssue.line}` : ''}</p>
+                      </div>
+                      <div>
+                        <h4>Category</h4>
+                        <p>{selectedIssue.category ?? '—'}</p>
+                      </div>
+                      {selectedIssue.evidence && (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <h4>Evidence</h4>
+                          <code style={{
+                            display: 'block',
+                            padding: '10px 14px',
+                            background: 'var(--bg-elevated)',
+                            borderRadius: 6,
+                            fontSize: 12,
+                            overflow: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                          }}>
+                            {selectedIssue.evidence}
+                          </code>
+                        </div>
+                      )}
+                      <div>
+                        <h4>Impact</h4>
+                        <p>{selectedIssue.impact ?? '—'}</p>
+                      </div>
+                      <div>
+                        <h4>Recommendation</h4>
+                        <p>{selectedIssue.recommendation ?? '—'}</p>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </>
             )}
           </section>
         )}
