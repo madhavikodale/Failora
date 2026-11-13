@@ -26,6 +26,11 @@ export const createScanSchema = z.object({
     (u) => u.startsWith("http://") || u.startsWith("https://"),
     { message: "URL must be http or https" }
   ),
+  // Safety gate (ITADORI-style): explicit authorization acknowledgment required
+  authorized: z.literal(true, {
+    message:
+      "You must acknowledge you are authorized to test this target (set authorized: true)",
+  }),
 });
 
 export const createMonitorSchema = z.object({
