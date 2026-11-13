@@ -2,13 +2,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api/client'
 import type { Target, ScanResult, Monitor, RepoScanResult, RepoScanFinding } from '../api/client'
 import ThemeToggle from './ThemeToggle'
+import NotificationCenter from './NotificationCenter'
+import ScanComparison from './ScanComparison'
+import { useWebSocket } from '../hooks/useWebSocket'
 import {
   Icon, ICONS, Button, Card, Badge, SevBadge, StatCard,
   Progress, Switch, EmptyState, HealthRing,
   BarChart, DonutChart, CommandPalette, Toast, StatusDot,
 } from './ui'
 
-interface ConsolePageProps {
+interface DashboardPageProps {
   onBack: () => void
   user?: { id: string; email: string; name: string } | null
 }
@@ -24,11 +27,11 @@ interface ScanResultData {
   overallScore?: number
 }
 
-type View = 'overview' | 'websites' | 'repos' | 'issues' | 'testing' | 'reports' | 'settings'
+type View = 'overview' | 'websites' | 'repos' | 'issues' | 'testing' | 'reports' | 'settings' | 'compare'
 
 // ── Component ─────────────────────────────────────────────────────────
 
-export default function ConsolePage({ onBack, user }: ConsolePageProps) {
+export default function DashboardPage({ onBack, user }: DashboardPageProps) {
   const [activeView, setActiveView] = useState<View>('overview')
   const [sevFilter, setSevFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
@@ -61,6 +64,25 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     slackIntegration: false,
     webhookUrl: false,
     dailyDigest: true,
+  })
+
+  // ── WebSocket real-time updates ─────────────────────────────────────
+  const { connected: wsConnected } = useWebSocket({
+    onMessage: (message) => {
+      if (message.event === 'scan:completed') {
+        fetchData()
+        setToast({ message: `Scan ${message.data.status}: ${message.data.url}`, type: message.data.status === 'completed' ? 'success' : 'warning' })
+      }
+      if (message.event === 'scan:started') {
+        fetchData()
+      }
+    },
+    onConnect: () => {
+      console.log('[WS] Connected to real-time updates')
+    },
+    onDisconnect: () => {
+      console.log('[WS] Disconnected')
+    },
   })
 
   // ── Fetch real data ───────────────────────────────────────────────
@@ -176,8 +198,61 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
     { id: 'issues', label: 'Issues', icon: ICONS.issues, badge: realFindings.length },
     { id: 'testing', label: 'AI Testing', icon: ICONS.testing },
     { id: 'reports', label: 'Reports', icon: ICONS.reports },
+    { id: 'compare', label: 'Compare', icon: ICONS.activity },
     { id: 'settings', label: 'Settings', icon: ICONS.settings },
   ]
+
+  // ── Priority badge from severity ─────────────────────────────────
+  const priorityBadge = (severity: string) => {
+    const map: Record<string, { label: string; color: string }> = {
+      critical: { label: 'P1', color: 'var(--danger)' },
+      high: { label: 'P2', color: 'var(--warning)' },
+      medium: { label: 'P3', color: 'var(--info)' },
+      low: { label: 'P4', color: 'var(--text-muted)' },
+    }
+    const p = map[severity] ?? map.low
+    return (
+      <span style={{
+        padding: '2px 8px',
+        borderRadius: 4,
+        fontSize: 11,
+        fontWeight: 700,
+        background: `${p.color}20`,
+        color: p.color,
+        marginLeft: 8,
+      }}>
+        {p.label}
+      </span>
+    )
+  }
+
+  // ── Verification status badge ────────────────────────────────────
+  const verificationBadge = (status?: string) => {
+    if (!status) return null
+    const colors: Record<string, string> = {
+      confirmed: 'var(--success)',
+      rejected: 'var(--text-muted)',
+      inconclusive: 'var(--warning)',
+    }
+    const labels: Record<string, string> = {
+      confirmed: '✓ Verified',
+      rejected: '✗ False Positive',
+      inconclusive: '? Inconclusive',
+    }
+    const c = colors[status] ?? 'var(--text-muted)'
+    return (
+      <span style={{
+        padding: '2px 8px',
+        borderRadius: 4,
+        fontSize: 11,
+        fontWeight: 600,
+        background: `${c}20`,
+        color: c,
+      }}>
+        {labels[status] ?? status}
+      </span>
+    )
+  }
 
   // ── Command palette actions ───────────────────────────────────────
   const commandActions = [
@@ -244,8 +319,8 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
         </nav>
 
         <div className="console-side-foot">
-          <b><span className="status-dot" />Live mode</b>
-          Connected to real API. Data persists in SQLite.
+          <b><span className={`status-dot ${wsConnected ? '' : 'disconnected'}`} />{wsConnected ? 'Live mode' : 'Offline'}</b>
+          {wsConnected ? 'Connected to real-time API. Data persists in SQLite.' : 'Reconnecting...'}
         </div>
       </aside>
 
@@ -271,10 +346,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
           </div>
           <div className="console-top-right">
             <ThemeToggle />
-            <button className="console-iconbtn" title="Notifications">
-              <Icon d={ICONS.bell} size={17} />
-              <span className="notif-dot" />
-            </button>
+            <NotificationCenter onToast={(message, type) => setToast({ message, type })} />
             <div className="console-avatar" title={user?.name ?? 'User'}>
               {user?.name?.charAt(0).toUpperCase() ?? 'M'}{user?.name?.split(' ')[1]?.charAt(0).toUpperCase() ?? 'K'}
             </div>
@@ -449,7 +521,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                           <StatusDot status={m.is_active ? 'up' : 'unknown'} size={10} />
                         </span>
                         <span className="activity-text">{m.name} ({m.url})</span>
-                        <span className="activity-time">{m.interval_seconds}s interval</span>
+                        <span className="activity-time">{m.interval_sec}s interval</span>
                       </div>
                     ))}
                   </div>
@@ -915,7 +987,7 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                         className={`clickable ${selectedIssue?.title === issue.title ? 'selected' : ''}`}
                         onClick={() => setSelectedIssue(issue)}
                       >
-                        <td><SevBadge severity={issue.severity} /></td>
+                        <td><SevBadge severity={issue.severity} />{priorityBadge(issue.severity)}</td>
                         <td>{issue.title}</td>
                         <td className="mono-text">{issue.file ?? '—'}</td>
                         <td>
@@ -923,7 +995,9 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
                             {issue.severity}
                           </Badge>
                         </td>
-                        <td><Button variant="ghost" size="sm">Open</Button></td>
+                        <td>
+                          {issue.verification_status ? verificationBadge(issue.verification_status) : <Button variant="ghost" size="sm">Open</Button>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1055,13 +1129,26 @@ export default function ConsolePage({ onBack, user }: ConsolePageProps) {
           </section>
         )}
 
-        {/* ── 7. SETTINGS ─────────────────────────────────────── */}
+        {/* ── 7. COMPARE ─────────────────────────────────────── */}
+        {activeView === 'compare' && (
+          <section>
+            <div className="view-header anim-fade-in-up">
+              <div>
+                <h1>Scan Comparison</h1>
+                <p>Compare two scans side-by-side to track improvements or regressions.</p>
+              </div>
+            </div>
+            <ScanComparison scans={scans} />
+          </section>
+        )}
+
+        {/* ── 8. SETTINGS ─────────────────────────────────────── */}
         {activeView === 'settings' && (
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
                 <h1>Integrations &amp; settings</h1>
-                <p>Configure your Failora console.</p>
+                <p>Configure your Failora dashboard.</p>
               </div>
             </div>
 

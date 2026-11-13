@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-  "@failora/core": "*",
-  "@failora/scanner": "*",
-  "@failora/monitor": "*",
-  "@failora/github-scanner": "*",
-  "@failora/auth": "*",
-  "@failora/reports": "*",
+    "@failora/auth": "*",
+    "@failora/core": "*",
+    "@failora/github-scanner": "*",
+    "@failora/monitor": "*",
+    "@failora/reports": "*",
+    "@failora/scanner": "*",
     "@fastify/cors": "^11.0.1",
+    "@fastify/websocket": "^11.3.7",
     "better-sqlite3": "^12.2.0",
     "fastify": "^5.6.1",
     "zod": "^4.1.8"

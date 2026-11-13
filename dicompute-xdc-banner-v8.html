@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiCompute × XDC — Brand Style</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --xdc-blue: #254da0;
+            --xdc-light: #4a90d9;
+            --xdc-cyan: #00b4d8;
+            --xdc-sky: #90e0ef;
+            --white: #ffffff;
+            --gray-light: #f0f4f8;
+            --gray-text: #5a6a7a;
+            --gradient-main: linear-gradient(135deg, #254da0 0%, #4a90d9 50%, #00b4d8 100%);
+            --gradient-light: linear-gradient(135deg, #4a90d9 0%, #00b4d8 100%);
+        }
+
+        body {
+            background: #e8ecf1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .banner {
+            width: 1200px;
+            height: 800px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, #f8fafc 0%, #e8f0f8 40%, #d8e8f5 70%, #c8dff0 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== WAVE BACKGROUND ===== */
+        .wave-container {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .wave {
+            position: absolute;
+            width: 150%;
+            height: 400px;
+            background: var(--gradient-main);
+            opacity: 0.08;
+            border-radius: 50%;
+            transform: rotate(-8deg);
+        }
+
+        .wave-1 {
+            top: -100px;
+            left: -20%;
+            animation: waveFloat 12s ease-in-out infinite;
+        }
+
+        .wave-2 {
+            bottom: -50px;
+            right: -20%;
+            opacity: 0.06;
+            transform: rotate(8deg);
+            animation: waveFloat 15s ease-in-out infinite reverse;
+        }
+
+        @keyframes waveFloat {
+            0%, 100% { transform: rotate(-8deg) translateX(0); }
+            50% { transform: rotate(-8deg) translateX(30px); }
+        }
+
+        /* ===== DOTS PATTERN ===== */
+        .dots {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, rgba(37,77,160,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 60px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .content-wrapper {
+            text-align: center;
+            max-width: 950px;
+        }
+
+        /* ===== LOGOS ===== */
+        .logos-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 20px 32px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(37,77,160,0.1);
+            box-shadow: 0 10px 40px rgba(37,77,160,0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .logo-info {
+            text-align: left;
+        }
+
+        .logo-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--xdc-blue);
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-desc {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .dicompute .logo-desc { color: var(--xdc-light); }
+        .xdc .logo-desc { color: var(--xdc-cyan); }
+
+        .logo-x {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--xdc-blue);
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(37,77,160,0.15);
+            border-radius: 50%;
+            box-shadow: 0 5px 20px rgba(37,77,160,0.1);
+        }
+
+        /* ===== HEADLINE ===== */
+        .headline-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 22px;
+            border-radius: 100px;
+            background: rgba(37,77,160,0.08);
+            border: 1px solid rgba(37,77,160,0.15);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--xdc-blue);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+        }
+
+        .headline-main {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 64px;
+            font-weight: 700;
+            letter-spacing: -2.5px;
+            line-height: 1.05;
+            color: var(--xdc-blue);
+            margin-bottom: 20px;
+        }
+
+        .headline-main .highlight {
+            background: var(--gradient-light);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .headline-sub {
+            font-size: 20px;
+            font-weight: 500;
+            color: var(--gray-text);
+            line-height: 1.5;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+
+        /* ===== FEATURES ===== */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 44px;
+        }
+
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 28px 32px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(37,77,160,0.1);
+            box-shadow: 0 8px 30px rgba(37,77,160,0.08);
+            min-width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(37,77,160,0.15);
+            border-color: rgba(37,77,160,0.2);
+        }
+
+        .feature-icon-wrap {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            font-size: 32px;
+        }
+
+        .feature-card:nth-child(1) .feature-icon-wrap {
+            background: linear-gradient(135deg, rgba(74,144,217,0.15), rgba(0,180,216,0.1));
+            border: 1px solid rgba(74,144,217,0.2);
+        }
+
+        .feature-card:nth-child(2) .feature-icon-wrap {
+            background: linear-gradient(135deg, rgba(0,180,216,0.15), rgba(144,224,239,0.1));
+            border: 1px solid rgba(0,180,216,0.2);
+        }
+
+        .feature-card:nth-child(3) .feature-icon-wrap {
+            background: linear-gradient(135deg, rgba(37,77,160,0.15), rgba(74,144,217,0.1));
+            border: 1px solid rgba(37,77,160,0.2);
+        }
+
+        .feature-text {
+            text-align: center;
+        }
+
+        .feature-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--xdc-blue);
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-text);
+        }
+
+        /* ===== BOTTOM STATS ===== */
+        .bottom-stats {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            padding: 0 60px 40px;
+        }
+
+        .stat-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 22px;
+            background: rgba(255,255,255,0.85);
+            border: 1px solid rgba(37,77,160,0.08);
+            border-right: none;
+            backdrop-filter: blur(20px);
+        }
+
+        .stat-box:first-child {
+            border-top-left-radius: 18px;
+            border-bottom-left-radius: 18px;
+        }
+
+        .stat-box:last-child {
+            border-top-right-radius: 18px;
+            border-bottom-right-radius: 18px;
+            border-right: 1px solid rgba(37,77,160,0.08);
+        }
+
+        .stat-icon {
+            font-size: 28px;
+        }
+
+        .stat-info {
+            text-align: left;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--xdc-blue);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-text);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* ===== DECORATIVE ELEMENTS ===== */
+        .deco-circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(37,77,160,0.08);
+        }
+
+        .deco-1 {
+            width: 200px;
+            height: 200px;
+            top: -50px;
+            right: -50px;
+        }
+
+        .deco-2 {
+            width: 150px;
+            height: 150px;
+            bottom: 100px;
+            left: -30px;
+        }
+
+        .deco-3 {
+            width: 100px;
+            height: 100px;
+            top: 150px;
+            left: 80px;
+            border-color: rgba(0,180,216,0.1);
+        }
+
+        /* ===== REDUCED MOTION ===== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <!-- Background -->
+        <div class="wave-container">
+            <div class="wave wave-1"></div>
+            <div class="wave wave-2"></div>
+        </div>
+        <div class="dots"></div>
+
+        <!-- Decorative Circles -->
+        <div class="deco-circle deco-1"></div>
+        <div class="deco-circle deco-2"></div>
+        <div class="deco-circle deco-3"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-wrapper">
+                <!-- Logos -->
+                <div class="logos-section">
+                    <div class="logo-container dicompute">
+                        <img src="dicompute_logo.png" alt="DiCompute" class="logo-img">
+                        <div class="logo-info">
+                            <div class="logo-name">DiCompute</div>
+                            <div class="logo-desc">AI Compute</div>
+                        </div>
+                    </div>
+                    <div class="logo-x">×</div>
+                    <div class="logo-container xdc">
+                        <img src="xdc_logo.png" alt="XDC" class="logo-img">
+                        <div class="logo-info">
+                            <div class="logo-name">XDC</div>
+                            <div class="logo-desc">Network</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Headline -->
+                <div class="headline-section">
+                    <div class="headline-tag">
+                        ⚡ DECENTRALIZED COMPUTE MARKETPLACE
+                    </div>
+                    <div class="headline-main">
+                        <span class="highlight">The World's Idle GPUs</span><br>
+                        Now Earning on XDC
+                    </div>
+                    <div class="headline-sub">
+                        Connect your GPU with one command. Run open-source AI models.<br>
+                        Get paid per request — settled instantly on XDC Network.
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon-wrap">🧠</div>
+                        <div class="feature-text">
+                            <div class="feature-title">Open Models</div>
+                            <div class="feature-desc">Llama, Mistral, Qwen</div>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrap">💳</div>
+                        <div class="feature-text">
+                            <div class="feature-title">Per-Request Billing</div>
+                            <div class="feature-desc">Fractions of a cent</div>
+                        </div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon-wrap">⚡</div>
+                        <div class="feature-text">
+                            <div class="feature-title">Instant Settlement</div>
+                            <div class="feature-desc">On XDC blockchain</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Stats -->
+        <div class="bottom-stats">
+            <div class="stat-box">
+                <div class="stat-icon">🖥️</div>
+                <div class="stat-info">
+                    <div class="stat-value">GPU Power</div>
+                    <div class="stat-label">Distributed Compute</div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">🔗</div>
+                <div class="stat-info">
+                    <div class="stat-value">XDC</div>
+                    <div class="stat-label">Settlement Layer</div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-info">
+                    <div class="stat-value">AI Models</div>
+                    <div class="stat-label">Open Source</div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <div class="stat-value">Per Request</div>
+                    <div class="stat-label">No Subscription</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

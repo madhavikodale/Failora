@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import type { ScanResult } from '../api/client'
+import type { ScanResult, ScanStep } from '../api/client'
 import ScoreRing from './ScoreRing'
 import StatusBadge from './StatusBadge'
+import ExecutionTimeline from './ExecutionTimeline'
 
 interface ScanDetailsProps {
   scan: ScanResult
@@ -21,10 +22,12 @@ interface ScanFinding {
   recommendation?: string
 }
 
-type DetailTab = 'health' | 'ssl' | 'dns' | 'performance' | 'findings'
+type DetailTab = 'health' | 'ssl' | 'dns' | 'performance' | 'findings' | 'timeline'
 
 export default function ScanDetails({ scan, onClose, onUpdate }: ScanDetailsProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('health')
+  const [steps, setSteps] = useState<ScanStep[]>([])
+  const [stepsLoading, setStepsLoading] = useState(false)
 
   useEffect(() => {
     if (scan.status === 'pending' || scan.status === 'running') {
@@ -43,6 +46,17 @@ export default function ScanDetails({ scan, onClose, onUpdate }: ScanDetailsProp
     }
   }, [scan.id, scan.status, onUpdate])
 
+  // Fetch scan steps when timeline tab is active
+  useEffect(() => {
+    if (activeTab === 'timeline') {
+      setStepsLoading(true)
+      api.getScanSteps(scan.id)
+        .then(setSteps)
+        .catch(() => setSteps([]))
+        .finally(() => setStepsLoading(false))
+    }
+  }, [activeTab, scan.id])
+
   const result = scan.result ? JSON.parse(scan.result) : null
   const findings: ScanFinding[] = result?.findings ?? []
 
@@ -59,6 +73,7 @@ export default function ScanDetails({ scan, onClose, onUpdate }: ScanDetailsProp
     { id: 'dns', label: 'DNS', icon: '🌐' },
     { id: 'performance', label: 'Performance', icon: '⚡' },
     { id: 'findings', label: `Findings (${findings.length})`, icon: '🛡️' },
+    { id: 'timeline', label: 'Timeline', icon: '📋' },
   ]
 
   const getSeverityBadge = (sev: string) => {
@@ -267,6 +282,12 @@ export default function ScanDetails({ scan, onClose, onUpdate }: ScanDetailsProp
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'timeline' && (
+              <div className="detail-section">
+                <ExecutionTimeline steps={steps} loading={stepsLoading} />
               </div>
             )}
           </div>

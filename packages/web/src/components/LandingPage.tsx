@@ -1,4 +1,5 @@
 import ThemeToggle from './ThemeToggle'
+import QuickScanWidget from './QuickScanWidget'
 
 interface LandingPageProps {
   onGetStarted: () => void
@@ -85,6 +86,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </div>
         <div className="hero-down-mask" />
+      </section>
+
+      {/* Quick Scan Widget */}
+      <section className="quick-scan-sc" id="quick-scan">
+        <div className="container">
+          <QuickScanWidget onGetStarted={onGetStarted} />
+        </div>
       </section>
 
       {/* Logo/Stats strip */}

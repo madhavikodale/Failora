@@ -76,6 +76,20 @@ CREATE TABLE IF NOT EXISTS alerts (
   acknowledged INTEGER DEFAULT 0,
   FOREIGN KEY (monitor_id) REFERENCES monitors(id)
 );
+
+CREATE TABLE IF NOT EXISTS scan_steps (
+  id TEXT PRIMARY KEY,
+  scan_id TEXT NOT NULL,
+  step_name TEXT NOT NULL,
+  step_key TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  duration_ms INTEGER,
+  details TEXT,
+  started_at TEXT DEFAULT (datetime('now')),
+  completed_at TEXT,
+  sort_order INTEGER DEFAULT 0,
+  FOREIGN KEY (scan_id) REFERENCES scans(id)
+);
 `);
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -147,6 +161,19 @@ export interface AlertRow {
   acknowledged: number;
 }
 
+export interface ScanStepRow {
+  id: string;
+  scan_id: string;
+  step_name: string;
+  step_key: string;
+  status: string;
+  duration_ms: number | null;
+  details: string | null;
+  started_at: string;
+  completed_at: string | null;
+  sort_order: number;
+}
+
 // ── Target Queries ──────────────────────────────────────────────────
 
 const insertTarget = db.prepare(`
@@ -216,6 +243,20 @@ const insertAlert = db.prepare(`
 const getAlertsByMonitor = db.prepare(`SELECT * FROM alerts WHERE monitor_id = ? ORDER BY sent_at DESC`);
 const getAllAlerts = db.prepare(`SELECT * FROM alerts ORDER BY sent_at DESC`);
 const acknowledgeAlertQuery = db.prepare(`UPDATE alerts SET acknowledged = 1 WHERE id = ?`);
+
+// ── Scan Step Queries ───────────────────────────────────────────────
+
+const insertScanStep = db.prepare(`
+  INSERT INTO scan_steps (id, scan_id, step_name, step_key, status, sort_order)
+  VALUES (@id, @scan_id, @step_name, @step_key, @status, @sort_order)
+`);
+
+const updateScanStep = db.prepare(`
+  UPDATE scan_steps SET status = @status, duration_ms = @duration_ms, details = @details, completed_at = datetime('now')
+  WHERE id = @id
+`);
+
+const getStepsByScan = db.prepare(`SELECT * FROM scan_steps WHERE scan_id = ? ORDER BY sort_order ASC`);
 
 // ── Exported Functions ──────────────────────────────────────────────
 
@@ -410,4 +451,42 @@ export function getAlerts(monitorId?: string): AlertRow[] {
 
 export function acknowledgeAlert(id: string): boolean {
   return acknowledgeAlertQuery.run(id).changes > 0;
+}
+
+export function resolveAlert(id: string): boolean {
+  const query = db.prepare(`UPDATE alerts SET acknowledged = 1 WHERE id = ?`);
+  return query.run(id).changes > 0;
+}
+
+// ── Scan Step Functions ───────────────────────────────────────────────
+
+export function createScanStep(data: {
+  scan_id: string;
+  step_name: string;
+  step_key: string;
+  sort_order: number;
+}): ScanStepRow {
+  const id = randomUUID();
+  insertScanStep.run({
+    id,
+    scan_id: data.scan_id,
+    step_name: data.step_name,
+    step_key: data.step_key,
+    status: 'running',
+    sort_order: data.sort_order,
+  });
+  return { id, scan_id: data.scan_id, step_name: data.step_name, step_key: data.step_key, status: 'running', duration_ms: null, details: null, started_at: new Date().toISOString(), completed_at: null, sort_order: data.sort_order };
+}
+
+export function completeScanStep(id: string, status: string, durationMs: number, details?: unknown): void {
+  updateScanStep.run({
+    id,
+    status,
+    duration_ms: durationMs,
+    details: details ? JSON.stringify(details) : null,
+  });
+}
+
+export function getScanSteps(scanId: string): ScanStepRow[] {
+  return getStepsByScan.all(scanId) as ScanStepRow[];
 }

@@ -32,7 +32,7 @@ export default function MonitorPanel({ monitors, onMonitorCreated, onToggle }: M
     setError(null)
     setLoading(true)
     try {
-      const monitor = await api.createMonitor({ name, url, interval_seconds: interval * 60 })
+      const monitor = await api.createMonitor({ name, url, interval_sec: interval * 60 })
       onMonitorCreated(monitor)
       setName('')
       setUrl('')
@@ -126,13 +126,13 @@ export default function MonitorPanel({ monitors, onMonitorCreated, onToggle }: M
                   <span className="monitor-url">{m.url}</span>
                   <div className="monitor-meta">
                     <span className="badge badge-info">
-                      Every {m.interval_seconds >= 3600
-                        ? m.interval_seconds >= 86400
+                      Every {m.interval_sec >= 3600
+                        ? m.interval_sec >= 86400
                           ? 'day'
-                          : `${m.interval_seconds / 3600}h`
-                        : m.interval_seconds >= 60
-                          ? `${Math.round(m.interval_seconds / 60)}m`
-                          : `${m.interval_seconds}s`}
+                          : `${m.interval_sec / 3600}h`
+                        : m.interval_sec >= 60
+                          ? `${Math.round(m.interval_sec / 60)}m`
+                          : `${m.interval_sec}s`}
                     </span>
                     <span className="text-muted text-sm">
                       Added {new Date(m.created_at).toLocaleDateString()}

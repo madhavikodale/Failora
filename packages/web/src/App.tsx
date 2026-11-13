@@ -20,14 +20,14 @@ import MonitorPanel from './components/MonitorPanel'
 import GitHubScannerPanel from './components/GitHubScannerPanel'
 import APITesterPanel from './components/APITesterPanel'
 import BrokenLinksPanel from './components/BrokenLinksPanel'
-import ConsolePage from './components/ConsolePage'
+import DashboardPage from './components/DashboardPage'
 import './App.css'
 
 type Tab = 'overview' | 'scans' | 'monitors' | 'api-tester' | 'github' | 'links'
-type View = 'landing' | 'auth' | 'dashboard' | 'console'
+type View = 'landing' | 'auth' | 'dashboard'
 
 function AppContent() {
-  const [view, setView] = useState<View>('console')
+  const [view, setView] = useState<View>('landing')
   const [token, setToken] = useState<string | null>(localStorage.getItem('failora_token'))
   const [user, setUser] = useState<{ id: string; email: string; name: string } | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -97,7 +97,6 @@ function AppContent() {
     const params = new URLSearchParams(window.location.search)
     const urlToken = params.get('token')
     const urlUser = params.get('user')
-    const urlView = params.get('view')
     if (urlToken && urlUser) {
       try {
         const parsedUser = JSON.parse(decodeURIComponent(urlUser))
@@ -105,7 +104,7 @@ function AppContent() {
         localStorage.setItem('failora_user', JSON.stringify(parsedUser))
         setToken(urlToken)
         setUser(parsedUser)
-        setView(urlView === 'console' ? 'console' : 'dashboard')
+        setView('dashboard')
         // Clean URL
         window.history.replaceState({}, '', '/')
       } catch { /* ignore */ }
@@ -214,11 +213,11 @@ function AppContent() {
     )
   }
 
-  // ── Console Page ──────────────────────────────────────────────────
-  if (view === 'console') {
+  // ── Dashboard Page ──────────────────────────────────────────────────
+  if (view === 'dashboard') {
     return (
       <>
-        <ConsolePage onBack={() => setView('landing')} user={user} />
+        <DashboardPage onBack={() => setView('landing')} user={user} />
         <ToastContainer toasts={toasts} />
       </>
     )
@@ -256,10 +255,10 @@ function AppContent() {
         <div className="sidebar-footer">
           <button
             className="sidebar-console-btn"
-            onClick={() => setView('console')}
+            onClick={() => setView('dashboard')}
           >
-            <span>💬</span>
-            <span>Open Console</span>
+            <span>📊</span>
+            <span>Open Dashboard</span>
           </button>
           <div className={`api-status ${apiConnected === null ? 'unknown' : apiConnected ? 'connected' : 'disconnected'}`}>
             <span className="badge-dot" style={{ background: apiConnected ? 'var(--success)' : 'var(--danger)' }} />

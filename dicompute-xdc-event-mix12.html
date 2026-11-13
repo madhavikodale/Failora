@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DiCompute × XDC Network — Event Banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: #050510;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+  }
+
+  .banner {
+    position: relative;
+    width: 1600px; height: 900px;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    background: linear-gradient(160deg, #060614 0%, #0a0a2e 35%, #0d1b4c 65%, #060614 100%);
+  }
+
+  /* ===== NEBULA CLOUDS ===== */
+  .nebula { position: absolute; inset: 0; overflow: hidden; }
+  .nebula-cloud {
+    position: absolute; border-radius: 50%; filter: blur(100px);
+    animation: nebulaFloat 20s ease-in-out infinite;
+  }
+  .nebula-1 { width: 700px; height: 500px; background: radial-gradient(ellipse, rgba(37,77,160,0.35), transparent); top: -100px; left: -100px; animation-delay: 0s; }
+  .nebula-2 { width: 600px; height: 500px; background: radial-gradient(ellipse, rgba(74,144,217,0.25), transparent); bottom: -100px; right: -100px; animation-delay: -7s; }
+  .nebula-3 { width: 500px; height: 400px; background: radial-gradient(ellipse, rgba(0,180,216,0.2), transparent); top: 35%; left: 30%; animation-delay: -14s; }
+  @keyframes nebulaFloat {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(30px,-20px) scale(1.05); }
+    66% { transform: translate(-20px,30px) scale(0.97); }
+  }
+
+  /* ===== STAR FIELD ===== */
+  .stars { position: absolute; inset: 0; overflow: hidden; }
+  .star {
+    position: absolute; width: 2px; height: 2px;
+    background: #fff; border-radius: 50%;
+    opacity: 0; animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 0.9; transform: scale(1); }
+  }
+
+  /* ===== PERSPECTIVE FLOOR GRID ===== */
+  .floor {
+    position: absolute; left: -400px; right: -400px; bottom: -50px; height: 500px;
+    background-image:
+      linear-gradient(rgba(74,144,217,0.3) 1.5px, transparent 1.5px),
+      linear-gradient(90deg, rgba(74,144,217,0.3) 1.5px, transparent 1.5px);
+    background-size: 70px 70px;
+    transform: perspective(600px) rotateX(62deg);
+    transform-origin: center bottom;
+    -webkit-mask-image: linear-gradient(0deg, #000 25%, transparent 90%);
+    mask-image: linear-gradient(0deg, #000 25%, transparent 90%);
+    opacity: 0.6;
+    animation: gridPulse 5s ease-in-out infinite alternate;
+  }
+  @keyframes gridPulse {
+    0% { opacity: 0.45; }
+    100% { opacity: 0.7; }
+  }
+
+  /* ===== GLOW ORB ===== */
+  .glow-orb {
+    position: absolute; width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(37,77,160,0.15) 0%, transparent 70%);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    animation: orbPulse 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes orbPulse {
+    0% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 1; transform: translate(-50%,-50%) scale(1.08); }
+  }
+
+  /* ===== CONTENT WRAPPER ===== */
+  .content {
+    position: relative; z-index: 10;
+    height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 40px 80px;
+  }
+
+  /* ===== TOP BADGE ===== */
+  .event-badge {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 14px 28px; border-radius: 100px;
+    background: rgba(37,77,160,0.25);
+    border: 1px solid rgba(74,144,217,0.5);
+    backdrop-filter: blur(20px);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 700; letter-spacing: 3px;
+    color: #4a90d9; text-transform: uppercase;
+    margin-bottom: 30px;
+    box-shadow: 0 0 40px rgba(37,77,160,0.3);
+  }
+  .event-badge .dot {
+    width: 10px; height: 10px; background: #00b4d8; border-radius: 50%;
+    box-shadow: 0 0 15px #00b4d8;
+    animation: badgePulse 1.5s ease-in-out infinite;
+  }
+  @keyframes badgePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.75); }
+  }
+
+  /* ===== LOGOS ===== */
+  .logos-row {
+    display: flex; align-items: center; gap: 40px; margin-bottom: 40px;
+  }
+  .logo-box {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 32px; border-radius: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(74,144,217,0.3);
+    backdrop-filter: blur(30px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    position: relative; overflow: hidden;
+  }
+  .logo-box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #254da0, #4a90d9, #00b4d8);
+    border-radius: 3px 3px 0 0;
+  }
+  .logo-box::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .logo-img { width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); }
+  .logo-text { text-align: left; }
+  .logo-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;
+  }
+  .logo-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; margin-top: 5px;
+  }
+  .logo-box.dicompute .logo-tag { color: #4a90d9; }
+  .logo-box.xdc .logo-tag { color: #00b4d8; }
+  .logo-x {
+    width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(74,144,217,0.3);
+    border-radius: 50%; backdrop-filter: blur(20px);
+  }
+
+  /* ===== HEADLINE ===== */
+  .headline {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 100px; font-weight: 700; letter-spacing: -3px;
+    line-height: 0.95; margin-bottom: 24px;
+  }
+  .headline .line1 { color: #fff; display: block; }
+  .headline .line2 {
+    display: block;
+    background: linear-gradient(120deg, #254da0 0%, #4a90d9 30%, #00b4d8 60%, #4a90d9 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    background-size: 200% 200%; animation: gradientShift 6s ease infinite;
+    filter: drop-shadow(0 0 40px rgba(74,144,217,0.4));
+  }
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .headline .line3 {
+    display: block; font-size: 36px; font-weight: 500;
+    color: rgba(255,255,255,0.7); letter-spacing: 2px;
+    margin-top: 20px; text-transform: uppercase;
+  }
+
+  /* ===== SUBTITLE ===== */
+  .subtitle {
+    font-size: 22px; color: rgba(255,255,255,0.75);
+    max-width: 800px; line-height: 1.6; margin-bottom: 50px;
+  }
+
+  /* ===== FEATURE CARDS ===== */
+  .features {
+    display: flex; gap: 24px; justify-content: center;
+  }
+  .feature-card {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    padding: 28px 36px; border-radius: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(74,144,217,0.25);
+    backdrop-filter: blur(30px);
+    min-width: 200px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    transition: all 0.4s ease;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity 0.4s;
+  }
+  .feature-card:nth-child(1)::before { background: radial-gradient(circle at 50% 0%, rgba(37,77,160,0.2), transparent 70%); }
+  .feature-card:nth-child(2)::before { background: radial-gradient(circle at 50% 0%, rgba(0,180,216,0.2), transparent 70%); }
+  .feature-card:nth-child(3)::before { background: radial-gradient(circle at 50% 0%, rgba(74,144,217,0.2), transparent 70%); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(74,144,217,0.5);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+  }
+
+  .feature-icon-wrap {
+    width: 70px; height: 70px; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .feature-card:nth-child(1) .feature-icon-wrap {
+    background: linear-gradient(135deg, rgba(37,77,160,0.3), rgba(37,77,160,0.1));
+    border: 1px solid rgba(37,77,160,0.5);
+    box-shadow: 0 0 40px rgba(37,77,160,0.2);
+  }
+  .feature-card:nth-child(2) .feature-icon-wrap {
+    background: linear-gradient(135deg, rgba(0,180,216,0.3), rgba(0,180,216,0.1));
+    border: 1px solid rgba(0,180,216,0.5);
+    box-shadow: 0 0 40px rgba(0,180,216,0.2);
+  }
+  .feature-card:nth-child(3) .feature-icon-wrap {
+    background: linear-gradient(135deg, rgba(74,144,217,0.3), rgba(74,144,217,0.1));
+    border: 1px solid rgba(74,144,217,0.5);
+    box-shadow: 0 0 40px rgba(74,144,217,0.2);
+  }
+  .feature-icon-wrap::after {
+    content: ''; position: absolute; inset: -100%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: rotate(45deg);
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+  }
+  .feature-icon-svg { width: 32px; height: 32px; position: relative; z-index: 2; filter: drop-shadow(0 0 8px currentColor); }
+  .feature-card:nth-child(1) .feature-icon-svg { color: #4a90d9; }
+  .feature-card:nth-child(2) .feature-icon-svg { color: #00b4d8; }
+  .feature-card:nth-child(3) .feature-icon-svg { color: #4a90d9; }
+
+  .feature-title { font-size: 16px; font-weight: 700; color: #fff; }
+  .feature-desc { font-size: 13px; color: rgba(255,255,255,0.6); }
+
+  /* ===== BOTTOM BAR ===== */
+  .bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 60px;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(40px);
+    border-top: 1px solid rgba(74,144,217,0.2);
+  }
+  .bottom-bar .info-item {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: rgba(255,255,255,0.7);
+  }
+  .bottom-bar .info-item span { color: #fff; font-weight: 700; }
+  .bottom-bar .sep { color: rgba(74,144,217,0.4); margin: 0 30px; font-size: 20px; }
+  .bottom-bar .website { color: #00b4d8; font-weight: 700; }
+
+  /* ===== SCANLINE ===== */
+  .scanline {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent, rgba(74,144,217,0.02) 50%, transparent);
+    animation: scan 10s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+
+  /* ===== REDUCED MOTION ===== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="banner">
+  <!-- Background layers -->
+  <div class="nebula">
+    <div class="nebula-cloud nebula-1"></div>
+    <div class="nebula-cloud nebula-2"></div>
+    <div class="nebula-cloud nebula-3"></div>
+  </div>
+  <div class="stars" id="stars"></div>
+  <div class="floor"></div>
+  <div class="glow-orb"></div>
+  <div class="scanline"></div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Event badge -->
+    <div class="event-badge">
+      <span class="dot"></span>
+      LIVE DEMO · XDC TESTNET
+    </div>
+
+    <!-- Logos -->
+    <div class="logos-row">
+      <div class="logo-box dicompute">
+        <img src="dicompute_logo_hq.png" alt="DiCompute" class="logo-img">
+        <div class="logo-text">
+          <div class="logo-name">DiCompute</div>
+          <div class="logo-tag">AI Compute</div>
+        </div>
+      </div>
+      <div class="logo-x">×</div>
+      <div class="logo-box xdc">
+        <img src="xdc_logo_hq.png" alt="XDC" class="logo-img">
+        <div class="logo-text">
+          <div class="logo-name">XDC</div>
+          <div class="logo-tag">Network</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Headline -->
+    <div class="headline">
+      <span class="line1">The World's</span>
+      <span class="line2">Idle GPUs</span>
+      <span class="line3">Now Earning on XDC</span>
+    </div>
+
+    <!-- Subtitle -->
+    <div class="subtitle">
+      Connect your GPU with one command. Run open-source AI models.<br>
+      Get paid per request — settled instantly on XDC Network.
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" fill="none"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        <div class="feature-title">Open Models</div>
+        <div class="feature-desc">Llama · Mistral · Qwen</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 4H4C2.89 4 2.01 4.89 2.01 6L2 18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V6C22 4.89 21.11 4 20 4ZM20 18H4V12H20V18ZM20 8H4V6H20V8Z"/>
+          </svg>
+        </div>
+        <div class="feature-title">Per-Request</div>
+        <div class="feature-desc">Fractions of a cent</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"/>
+          </svg>
+        </div>
+        <div class="feature-title">Instant</div>
+        <div class="feature-desc">XDC blockchain settle</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <div class="info-item">🖥️ <span>GPU Power</span> Distributed</div>
+    <div class="sep">·</div>
+    <div class="info-item">🔗 <span>XDC</span> Settlement</div>
+    <div class="sep">·</div>
+    <div class="info-item">⚡ <span>Per Request</span> No Subscription</div>
+    <div class="sep">·</div>
+    <div class="info-item website">dicompute.ai</div>
+  </div>
+</div>
+
+<script>
+  // Generate stars
+  const starsContainer = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    star.style.animationDuration = (2 + Math.random() * 2) + 's';
+    starsContainer.appendChild(star);
+  }
+</script>
+</body>
+</html>

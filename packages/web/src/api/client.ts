@@ -37,8 +37,10 @@ export interface Monitor {
   id: string;
   name: string;
   url: string;
-  method: string;
-  interval_seconds: number;
+  interval_sec: number;
+  timeout_ms: number;
+  expected_status_codes: string;
+  alert_threshold: number;
   is_active: boolean;
   created_at: string;
 }
@@ -46,9 +48,10 @@ export interface Monitor {
 export interface MonitorHistory {
   id: string;
   monitor_id: string;
-  is_up: boolean;
+  is_up: number | null;
   status_code: number | null;
-  response_time_ms: number | null;
+  latency_ms: number | null;
+  error: string | null;
   checked_at: string;
 }
 
@@ -63,6 +66,7 @@ export interface RepoScanFinding {
   evidence?: string;
   impact?: string;
   recommendation?: string;
+  verification_status?: string;
 }
 
 export interface RepoScanCheck {
@@ -111,6 +115,39 @@ export interface RepoScanResult {
   checks?: RepoScanCheck[];
 }
 
+export interface ScanStep {
+  id: string;
+  scan_id: string;
+  step_name: string;
+  step_key: string;
+  status: string;
+  duration_ms: number | null;
+  details: string | null;
+  started_at: string;
+  completed_at: string | null;
+  sort_order: number;
+}
+
+export interface Alert {
+  id: string;
+  monitor_id: string;
+  severity: string;
+  title: string;
+  message: string;
+  evidence: string | null;
+  sent_at: string;
+  acknowledged: number;
+}
+
+export interface ScenarioConfig {
+  mode: string;
+  timeoutMs?: number;
+  maxRetries?: number;
+  retryDelayMs?: number;
+  fallbackUrl?: string;
+  expectedBehavior?: string;
+}
+
 export interface AuthResult {
   success: boolean;
   user?: { id: string; email: string; name: string };
@@ -149,6 +186,76 @@ export interface AttemptResult {
   durationMs: number;
   errorType?: string;
   errorMessage?: string;
+  schemaValid?: boolean;
+}
+
+export interface ScenarioResult {
+  mode: string;
+  target: TestTarget;
+  attempts: AttemptResult[];
+  totalDurationMs: number;
+  recovered: boolean;
+  usedRetry: boolean;
+  initialFailure: boolean;
+  usedFallback: boolean;
+  behaviorValidated: boolean;
+  recoveryEvidence?: {
+    expectedBehavior: string;
+    actualBehavior: string;
+    validResponse: boolean;
+    timestamp: string;
+  };
+  summary: string;
+}
+
+export interface TestTarget {
+  url: string;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+}
+
+export interface RegressionTest {
+  id: string;
+  name: string;
+  target: TestTarget;
+  config: ScenarioConfig;
+  baselineResult?: ScenarioResult;
+  createdAt: string;
+}
+
+export interface RegressionResult {
+  testId: string;
+  baselinePassed: boolean;
+  currentPassed: boolean;
+  isRegression: boolean;
+  degradationPoints: string[];
+  improvementPoints: string[];
+  comparedAt: string;
+}
+
+export interface ReliabilityScore {
+  overall: number;
+  retryEffectiveness: number;
+  fallbackEffectiveness: number;
+  recoverySpeedScore: number;
+  schemaCompliance: number;
+  performanceScore: number;
+  evidence: string[];
+}
+
+export interface GapReport {
+  target: TestTarget;
+  scannedAt: string;
+  reliabilityScore: ReliabilityScore;
+  gaps: Array<{
+    severity: string;
+    category: string;
+    description: string;
+    evidence: string;
+    recommendation: string;
+  }>;
+  summary: string;
 }
 
 export interface RunResult {
@@ -201,26 +308,42 @@ export const api = {
   }) => request<Run>("/runs", { method: "POST", body: JSON.stringify(data) }),
 
   // ── Scans ─────────────────────────────────────────────────────────
-  createScan: (data: { url: string }) =>
+  createScan: (data: { url: string; authorized?: boolean }) =>
     request<ScanResult>("/scans", { method: "POST", body: JSON.stringify(data) }),
   listScans: () => request<ScanResult[]>("/scans"),
   getScan: (id: string) => request<ScanResult>(`/scans/${id}`),
+  getScanSteps: (id: string) => request<ScanStep[]>(`/scans/${id}/steps`),
+
+  // ── Alerts ──────────────────────────────────────────────────────────
+  getAlerts: (monitorId?: string) => {
+    const qs = monitorId ? `?monitor_id=${encodeURIComponent(monitorId)}` : '';
+    return request<Alert[]>(`/alerts${qs}`);
+  },
+  acknowledgeAlert: (id: string) =>
+    request<{ acknowledged: boolean }>(`/alerts/${id}/acknowledge`, { method: 'POST' }),
+  resolveAlert: (id: string) =>
+    request<{ resolved: boolean }>(`/alerts/${id}/resolve`, { method: 'POST' }),
 
   // ── Monitors ──────────────────────────────────────────────────────
   createMonitor: (data: {
     name: string;
     url: string;
-    method?: string;
-    interval_seconds?: number;
+    interval_sec?: number;
+    timeout_ms?: number;
+    expected_status_codes?: number[];
+    alert_threshold?: number;
   }) => request<Monitor>("/monitors", { method: "POST", body: JSON.stringify(data) }),
   listMonitors: () => request<Monitor[]>("/monitors"),
-  getMonitor: (id: string) =>
-    request<Monitor & { history: MonitorHistory[] }>(`/monitors/${id}`),
+  getMonitor: (id: string) => request<Monitor>(`/monitors/${id}`),
+  getMonitorHistory: (id: string, limit?: number) =>
+    request<MonitorHistory[]>(`/monitors/${id}/history${limit ? `?limit=${limit}` : ''}`),
   toggleMonitor: (id: string, active: boolean) =>
     request<Monitor>(`/monitors/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ is_active: active }),
     }),
+  deleteMonitor: (id: string) =>
+    request<{ success: boolean }>(`/monitors/${id}`, { method: "DELETE" }),
 
   // ── API Testing ───────────────────────────────────────────────────
   testAPI: (data: {
@@ -236,6 +359,31 @@ export const api = {
   // ── GitHub Repo ───────────────────────────────────────────────────
   scanRepo: (data: { owner: string; repo: string; branch?: string; token?: string }) =>
     request<RepoScanResult>("/scan-repo", { method: "POST", body: JSON.stringify(data) }),
+
+  // ── Regression Testing ────────────────────────────────────────────
+  createRegressionTest: (data: { name: string; target: TestTarget; config: ScenarioConfig }) =>
+    request<{ test: RegressionTest; baseline: ScenarioResult }>("/regression-tests", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  listRegressionTests: () => request<RegressionTest[]>("/regression-tests"),
+  getRegressionTest: (id: string) => request<RegressionTest>(`/regression-tests/${id}`),
+  compareRegressionTest: (id: string) =>
+    request<RegressionResult>(`/regression-tests/${id}/compare`, { method: "POST" }),
+  deleteRegressionTest: (id: string) =>
+    request<{ deleted: boolean }>(`/regression-tests/${id}`, { method: "DELETE" }),
+
+  // ── Reliability & Gap Analysis ────────────────────────────────────
+  calculateReliabilityScore: (results: ScenarioResult[]) =>
+    request<ReliabilityScore>("/reliability-score", {
+      method: "POST",
+      body: JSON.stringify({ results }),
+    }),
+  generateGapReport: (target: TestTarget, results: ScenarioResult[]) =>
+    request<GapReport>("/gap-report", {
+      method: "POST",
+      body: JSON.stringify({ target, results }),
+    }),
 
   // ── Auth ──────────────────────────────────────────────────────────
   register: (data: { email: string; name: string; password: string }) =>
