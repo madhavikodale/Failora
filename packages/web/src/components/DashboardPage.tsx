@@ -384,7 +384,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Overview</h1>
+                <h1>Security Overview</h1>
                 <p>Real projects, scans and monitoring at a glance.</p>
               </div>
               <div className="view-actions">
@@ -562,8 +562,8 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Website monitoring</h1>
-                <p>Track uptime, latency and SSL for your websites.</p>
+                <h1>Monitored Websites</h1>
+                                <p>Track uptime, SSL and response times.</p>
               </div>
             </div>
 
@@ -696,7 +696,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Repository scanner</h1>
+                <h1>Code Repositories</h1>
                 <p>Paste a GitHub URL to analyze code quality, security gaps, error handling and tests.</p>
               </div>
             </div>
@@ -971,7 +971,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Issues &amp; findings</h1>
+                <h1>Security Findings</h1>
                 <p>Real findings from repository scans. Filter by severity.</p>
               </div>
             </div>
@@ -1065,7 +1065,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>AI reliability tests</h1>
+                <h1>AI Test Results</h1>
                 <p>Chaos engineering scenarios against your API endpoints.</p>
               </div>
               <Badge variant="info">COMING SOON</Badge>
@@ -1086,7 +1086,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Reports &amp; history</h1>
+                <h1>Scan History &amp; Reports</h1>
                 <p>Generated reports and past scan results.</p>
               </div>
             </div>
@@ -1160,7 +1160,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Scan Comparison</h1>
+                <h1>Compare Scans</h1>
                 <p>Compare two scans side-by-side to track improvements or regressions.</p>
               </div>
             </div>
@@ -1173,7 +1173,7 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <section>
             <div className="view-header anim-fade-in-up">
               <div>
-                <h1>Integrations &amp; settings</h1>
+                <h1>Settings &amp; Integrations</h1>
                 <p>Configure your Failora dashboard.</p>
               </div>
             </div>
