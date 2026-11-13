@@ -1,5 +1,12 @@
 export * from "./types.ts";
-export { scanUrl } from "./engine/scanner.ts";
+export { scanUrl, type ScanOptions } from "./engine/scanner.ts";
+export {
+  assertSafeTarget,
+  acquireRateSlot,
+  resetRateLimiter,
+  SafetyError,
+  type SafetyConfig,
+} from "./engine/safety.ts";
 export { checkHealth } from "./checks/health.ts";
 export { checkSSL } from "./checks/ssl.ts";
 export { checkDNS } from "./checks/dns.ts";

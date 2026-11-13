@@ -6,14 +6,35 @@ import { checkDNS } from "../checks/dns.ts";
 import { checkSecurityHeaders } from "../checks/security-headers.ts";
 import { analyzePerformance } from "../checks/performance.ts";
 import { detectGaps } from "../engine/gap-detector.ts";
+import {
+  assertSafeTarget,
+  acquireRateSlot,
+  type SafetyConfig,
+} from "../engine/safety.ts";
+
+export interface ScanOptions extends Partial<SafetyConfig> {
+  /** Extra headers sent with every check request. */
+  headers?: Record<string, string>;
+}
 
 // ── URL Scanner Orchestrator ────────────────────────────────────────
 
-export async function scanUrl(url: string): Promise<ScanResult> {
-  // Normalize URL
+export async function scanUrl(url: string, options: ScanOptions = {}): Promise<ScanResult> {
+  // Normalize URL (prepend https:// when scheme is missing)
   if (!/^https?:\/\//.test(url)) {
     url = `https://${url}`;
   }
+  // Safety gate: authorization + scope + private-network block BEFORE any traffic
+  const config: SafetyConfig = {
+    authorized: options.authorized ?? false,
+    allowInsecure: options.allowInsecure,
+    allowLocalhost: options.allowLocalhost,
+    maxRequestsPerHost: options.maxRequestsPerHost,
+    rateWindowMs: options.rateWindowMs,
+  };
+  const safeUrl = assertSafeTarget(url, config);
+  acquireRateSlot(safeUrl.hostname, config);
+  url = safeUrl.toString();
 
   // Run all checks in parallel
   const [health, ssl, dns] = await Promise.all([
