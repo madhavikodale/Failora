@@ -2043,3 +2043,49 @@ tr.selected td {
 @media (max-width: 992px) {
   .mobile-menu-btn { display: flex; }
 }
+
+/* ── ScoreRing Data Viz Upgrade ──────────────────────────────────── */
+
+/* Gradient ring with animated glow */
+.score-ring-svg .ring-fill {
+  filter: drop-shadow(0 0 8px currentColor);
+  animation: ringGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes ringGlow {
+  from { filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.3)); }
+  to   { filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.5)); }
+}
+
+/* Score color classes use CSS variables for theme consistency */
+.score-excellent .ring-fill { stroke: var(--success); }
+.score-good .ring-fill { stroke: var(--info); }
+.score-fair .ring-fill { stroke: var(--warning); }
+.score-poor .ring-fill { stroke: var(--danger); }
+
+/* Score number with subtle pulse on change */
+.score-number {
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+}
+
+/* Trend arrow bounce */
+.score-trend svg {
+  animation: trendBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes trendBounce {
+  0%   { transform: scale(0); }
+  50%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Sparkline smooth entry */
+.score-sparkline polyline {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: sparklineDraw 1s ease-out forwards;
+}
+
+@keyframes sparklineDraw {
+  to { stroke-dashoffset: 0; }
+}

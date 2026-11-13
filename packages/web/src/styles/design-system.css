@@ -146,6 +146,19 @@
   padding: 0;
 }
 
+/* ── Dark Mode Smooth Transition ─────────────────────────────────── */
+/* Apply theme transition to common properties so theme switch feels */
+/* smooth without affecting performance-critical transforms           */
+body, .card, .panel, .sidebar, .topbar, .stat-card, .list-item,
+.chip, .badge, .btn, button, input, select, textarea, table, tr, td, th,
+.console-side, .console-main, .console-topbar, .quick-scan-widget {
+  transition:
+    background-color var(--t-med),
+    color var(--t-med),
+    border-color var(--t-med),
+    box-shadow var(--t-med);
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
@@ -1127,3 +1140,81 @@ h4 { font-size: 1rem; font-weight: 600; }
 @media print {
   .no-print { display: none !important; }
 }
+
+/* ── Micro-Animation Upgrades ────────────────────────────────────── */
+
+/* Enhanced stat-card hover — deeper lift + accent glow */
+.stat-card {
+  will-change: transform;
+}
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg), 0 0 20px var(--accent-glow);
+}
+
+/* Button press feedback */
+.btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+}
+
+/* Table row hover */
+tbody tr {
+  transition: background-color var(--t-fast);
+}
+tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+/* List item hover lift */
+.list-item {
+  transition: all var(--t-fast);
+  will-change: transform;
+}
+.list-item:hover {
+  transform: translateX(4px);
+  background: var(--bg-hover);
+}
+
+/* Chip hover */
+.chip {
+  transition: all var(--t-fast);
+}
+.chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Sidebar nav item smooth indicator */
+.sidebar-nav-item,
+.console-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-nav-item::before,
+.console-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+  transition: transform var(--t-med);
+}
+.sidebar-nav-item.active::before,
+.console-nav-item.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+/* Card entrance stagger — use with .anim-fade-in-up */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }

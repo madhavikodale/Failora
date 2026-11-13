@@ -93,6 +93,9 @@ export default function ScoreRing({
   const animationRef = useRef<number | null>(null)
   const circumference = ((size - strokeWidth) / 2) * 2 * Math.PI
 
+  // Unique gradient ID per instance to avoid SVG id collisions
+  const gradientId = `ring-gradient-${size}-${strokeWidth}`
+
   useEffect(() => {
     const duration = 1200
     const start = performance.now()
@@ -126,6 +129,12 @@ export default function ScoreRing({
     <div className={`score-ring-container ${scoreClass}`}>
       <div className="score-ring-wrapper">
         <svg width={size} height={size} className="score-ring-svg">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="var(--accent)" />
+              <stop offset="100%" stopColor="var(--accent-violet)" />
+            </linearGradient>
+          </defs>
           <circle
             className="ring-bg"
             cx={size / 2}
@@ -141,7 +150,10 @@ export default function ScoreRing({
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={currentOffset}
-            style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+            style={{
+              transition: 'stroke-dashoffset 0.1s linear',
+              stroke: `url(#${gradientId})`,
+            }}
           />
         </svg>
         <div className="score-text">
