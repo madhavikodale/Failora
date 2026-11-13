@@ -16,13 +16,6 @@ export { testAPIEndpoint } from "./checks/api-tester.ts";
 export { checkBrokenLinks } from "./checks/broken-links.ts";
 export { detectGaps } from "./engine/gap-detector.ts";
 export {
-  assertSafeTarget,
-  acquireRateSlot,
-  resetRateLimiter,
-  SafetyError,
-  type SafetyConfig,
-} from "./engine/safety.ts";
-export {
   classifyFinding,
   classifyFindings,
   priorityFromSeverity,
