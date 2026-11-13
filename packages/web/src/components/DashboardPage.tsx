@@ -190,16 +190,31 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
     return matchSev
   })
 
-  // ── Nav items ─────────────────────────────────────────────────────
-  const navItems: { id: View; label: string; icon: string; badge?: number }[] = [
-    { id: 'overview', label: 'Overview', icon: ICONS.overview },
-    { id: 'websites', label: 'Websites', icon: ICONS.websites, badge: totalTargets },
-    { id: 'repos', label: 'Repositories', icon: ICONS.repos },
-    { id: 'issues', label: 'Issues', icon: ICONS.issues, badge: realFindings.length },
-    { id: 'testing', label: 'AI Testing', icon: ICONS.testing },
-    { id: 'reports', label: 'Reports', icon: ICONS.reports },
-    { id: 'compare', label: 'Compare', icon: ICONS.activity },
-    { id: 'settings', label: 'Settings', icon: ICONS.settings },
+  // ── Nav items (grouped like skynet) ───────────────────────────────
+  const navSections: { label: string; items: { id: View; label: string; icon: string; badge?: number }[] }[] = [
+    {
+      label: 'Monitor',
+      items: [
+        { id: 'overview', label: 'Overview', icon: ICONS.overview },
+        { id: 'websites', label: 'Websites', icon: ICONS.websites, badge: totalTargets },
+        { id: 'repos', label: 'Repositories', icon: ICONS.repos },
+      ],
+    },
+    {
+      label: 'Analyze',
+      items: [
+        { id: 'issues', label: 'Issues', icon: ICONS.issues, badge: realFindings.length },
+        { id: 'compare', label: 'Compare', icon: ICONS.activity },
+        { id: 'reports', label: 'Reports', icon: ICONS.reports },
+      ],
+    },
+    {
+      label: 'Configure',
+      items: [
+        { id: 'testing' as View, label: 'AI Testing', icon: ICONS.testing },
+        { id: 'settings' as View, label: 'Settings', icon: ICONS.settings },
+      ],
+    },
   ]
 
   // ── Priority badge from severity ─────────────────────────────────
@@ -302,19 +317,30 @@ export default function DashboardPage({ onBack, user }: DashboardPageProps) {
           <span>Failora</span>
         </button>
 
+        {/* Sidebar search — opens command palette */}
+        <div className="sidebar-search" onClick={() => setCommandOpen(true)} style={{ cursor: 'pointer' }}>
+          <Icon d={ICONS.search} size={14} />
+          <input type="text" placeholder="Search..." readOnly />
+        </div>
+
         <nav className="console-nav">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              className={`console-nav-item ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => { setActiveView(item.id); setSidebarOpen(false) }}
-            >
-              <Icon d={item.icon} size={18} />
-              <span className="nav-label">{item.label}</span>
-              {item.badge !== undefined && item.badge > 0 && (
-                <span className="nav-badge">{item.badge}</span>
-              )}
-            </button>
+          {navSections.map(section => (
+            <div key={section.label} className="nav-section">
+              <div className="nav-section-label">{section.label}</div>
+              {section.items.map(item => (
+                <button
+                  key={item.id}
+                  className={`console-nav-item ${activeView === item.id ? 'active' : ''}`}
+                  onClick={() => { setActiveView(item.id as View); setSidebarOpen(false) }}
+                >
+                  <Icon d={item.icon} size={18} />
+                  <span className="nav-label">{item.label}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="nav-badge">{item.badge}</span>
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 

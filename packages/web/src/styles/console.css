@@ -2089,3 +2089,191 @@ tr.selected td {
 @keyframes sparklineDraw {
   to { stroke-dashoffset: 0; }
 }
+
+/* ── Skynet-Style Nav Sections ───────────────────────────────────── */
+
+.nav-section {
+  margin-bottom: var(--s-3);
+}
+
+.nav-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: var(--s-2) var(--s-3) var(--s-1);
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* Active nav glow — skynet style */
+.console-nav-item.active {
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.12), rgba(139, 92, 246, 0.08));
+  color: var(--accent);
+  box-shadow:
+    0 0 12px rgba(34, 211, 238, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.console-nav-item.active svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.5));
+}
+
+/* Nav badge — brighter */
+.nav-badge {
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--accent);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.2);
+}
+
+/* Sidebar search — skynet style */
+.sidebar-search {
+  margin: var(--s-3) var(--s-3) var(--s-2);
+  position: relative;
+}
+
+.sidebar-search input {
+  width: 100%;
+  background: var(--bg-sunk);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-3) var(--s-2) 32px;
+  font-size: 0.8125rem;
+  color: var(--text);
+  outline: none;
+  transition: all var(--t-fast);
+}
+
+.sidebar-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.sidebar-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+/* ── Skynet-Inspired Upgrades ────────────────────────────────────── */
+
+/* Topbar — glass effect with subtle border glow */
+.console-topbar {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-glow);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* Brand area — glow accent */
+.console-brand {
+  position: relative;
+}
+.console-brand::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+/* Stat cards — skynet-style with accent top border */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-violet));
+  opacity: 0;
+  transition: opacity var(--t-med);
+}
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+/* Severity badge glow */
+.badge {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-danger {
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.25);
+}
+.badge-warning {
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+}
+.badge-success {
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.2);
+}
+
+/* Panel headers — accent underline */
+.panel-header {
+  position: relative;
+  padding-bottom: var(--s-3);
+}
+.panel-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+
+/* Score ring container — ambient glow */
+.score-ring-container {
+  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.1));
+}
+
+/* Table header — sticky with blur */
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-raise);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-sunk);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Focus ring accent */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-raise), 0 0 0 4px var(--accent-glow);
+}
