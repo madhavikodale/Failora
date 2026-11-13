@@ -37,11 +37,11 @@ export function generateScanReport(
 
   // SSL section
   if (scan.ssl) {
-    const daysUntilExpiry = scan.ssl.daysUntilExpiry;
+    const daysRemaining = scan.ssl.daysRemaining;
     const sslSeverity =
-      daysUntilExpiry !== null && daysUntilExpiry < 7
+      daysRemaining !== undefined && daysRemaining < 7
         ? "critical"
-        : daysUntilExpiry !== null && daysUntilExpiry < 30
+        : daysRemaining !== undefined && daysRemaining < 30
           ? "high"
           : "info";
 
@@ -49,7 +49,7 @@ export function generateScanReport(
       title: "SSL/TLS Certificate",
       severity: sslSeverity,
       content: scan.ssl.valid
-        ? `Certificate valid. Issuer: ${scan.ssl.issuer}, Expires: ${scan.ssl.expiresAt} (${daysUntilExpiry} days)`
+        ? `Certificate valid. Issuer: ${scan.ssl.issuer}, Expires: ${scan.ssl.validTo} (${daysRemaining ?? "?"} days)`
         : `Certificate INVALID: ${scan.ssl.error ?? "Unknown"}`,
       data: scan.ssl,
     });
@@ -57,10 +57,13 @@ export function generateScanReport(
 
   // DNS section
   if (scan.dns) {
+    const a = scan.dns.records?.A?.length ?? 0;
+    const mx = scan.dns.records?.MX?.length ?? 0;
+    const txt = scan.dns.records?.TXT?.length ?? 0;
     sections.push({
       title: "DNS Configuration",
       severity: "info",
-      content: `A records: ${scan.dns.aRecords.length}, MX records: ${scan.dns.mxRecords.length}, TXT records: ${scan.dns.txtRecords.length}`,
+      content: `A records: ${a}, MX records: ${mx}, TXT records: ${txt}`,
       data: scan.dns,
     });
   }
@@ -82,7 +85,7 @@ export function generateScanReport(
     sections.push({
       title: "Performance",
       severity: scan.performance.totalTimeMs > 3000 ? "high" : scan.performance.totalTimeMs > 1000 ? "medium" : "info",
-      content: `Total time: ${scan.performance.totalTimeMs}ms (DNS: ${scan.performance.dnsMs}ms, Connect: ${scan.performance.connectMs}ms, TLS: ${scan.performance.tlsMs}ms)`,
+      content: `Total time: ${scan.performance.totalTimeMs}ms (DNS: ${scan.performance.dnsLookupMs}ms, Connect: ${scan.performance.tcpConnectMs}ms, TLS: ${scan.performance.tlsHandshakeMs}ms)`,
       data: scan.performance,
     });
   }
