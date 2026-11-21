@@ -197,7 +197,7 @@ function AppContent() {
   if (view === 'landing') {
     return (
       <>
-        <LandingPage onGetStarted={() => window.location.href = '/failora-site.html'} />
+        <LandingPage onGetStarted={() => window.location.href = '/console.html'} />
         <ToastContainer toasts={toasts} />
       </>
     )
